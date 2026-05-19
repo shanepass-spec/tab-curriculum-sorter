@@ -1,12 +1,14 @@
-# Tab Curriculum ZIP Sorter — V9
+# Tab Curriculum ZIP Sorter — V9.1
 
-V9 adds TabReady Export Mode.
+Stable sorter based on V8 with TabReady import package generation added cautiously.
 
-It sorts Lifeway curriculum ZIP files, creates teacher packet PDFs from existing PDFs, and outputs a TabReady-ready import package containing:
-
-- `TABREADY_IMPORT/manifest.json`
-- `TABREADY_IMPORT/curriculum/...` PDF packet files
-- regular sorted curriculum folders
-- clean sorting report
-
-This version does not directly modify TabReady. It prepares the package shape needed for a future TabReady import endpoint.
+## Features
+- Upload Lifeway curriculum ZIP
+- Skip Mac junk files
+- Exclude KJV / KJ / King James files
+- Keep Adult CSB, Senior Adult CSB, and Spanish lanes
+- Use built-in Spring 2026 lesson map or custom map
+- Create merged Teacher Packet PDFs from existing PDFs
+- Generate `TABREADY_IMPORT/manifest.json`
+- Generate `TABREADY_IMPORT/curriculum/...` packet files
+- Clean report by default
