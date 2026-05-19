@@ -1,19 +1,18 @@
-# Tab Curriculum ZIP Sorter — V7
+# Tab Curriculum ZIP Sorter — V8
 
-A Cloudflare-hosted browser tool for sorting Lifeway Sunday School curriculum ZIP files into ministry-readable folders.
+Audience-first Sunday School curriculum sorter and packet builder.
 
-## V7 Improvements
+## V8 Focus
 
-- Cleaner report output
-- Skips Mac junk files without listing each one in the report
-- Quarter selector
-- Custom lesson map box for Summer/Fall/Winter
-- Spring 2026 built-in map retained
-- Adult CSB, Senior Adult CSB, and Spanish lanes
-- KJV/KJ files excluded when selected
-- Useful non-PDF files preserved separately
+- Upload one curriculum ZIP.
+- Sort Adult CSB, Senior Adult CSB, and Spanish into separate lanes.
+- Use a built-in Spring 2026 map or paste a custom quarter map for Summer/Fall/Winter.
+- Keep repeated session numbers separated by unit/date/title.
+- Exclude KJV/KJ/King James files by default for Tabernacle use.
+- Skip Mac junk files.
+- Preserve useful non-PDF files separately.
+- Build teacher-ready PDF packet placeholders inside each session folder.
 
-## Deployment
+## Important Note
 
-Cloudflare Worker with static assets from `public/`.
-
+The browser can sort and bundle existing PDFs. It does not convert Word/image files into PDF. Since this project is mainly for teachers/students who lost books or are traveling, the PDF-first workflow should be sufficient in most cases.
