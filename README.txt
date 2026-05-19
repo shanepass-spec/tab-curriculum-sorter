@@ -1,15 +1,16 @@
-# Tab Curriculum Sorter
+# Tab Curriculum ZIP Sorter
 
-Browser-based ZIP/PDF sorter for Sunday School curriculum files.
+Browser-based ZIP sorter for Sunday School curriculum files.
 
-## What it does
+## Version 2
 
-- Upload one curriculum ZIP file
-- Reads the file names inside the ZIP
-- Groups PDF files into like-kind curriculum folders
-- Shows a review list
-- Builds a new sorted ZIP for download
+- Upload one curriculum ZIP
+- Scan all files without opening PDFs one-by-one
+- Group PDFs by curriculum type
+- Detect session numbers
+- Detect CS / KJ variants
+- Separate non-PDF files
+- Show unknown review list
+- Download a newly organized ZIP
 
-## Notes
-
-This first version sorts by file name and folder name. It does not OCR or read inside protected PDFs.
+Runs as a static Cloudflare Worker asset app.
