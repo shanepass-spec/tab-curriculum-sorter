@@ -1,32 +1,362 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Tab Curriculum Sorter</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tab Curriculum ZIP Sorter</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --card: #ffffff;
+      --ink: #1f2937;
+      --muted: #6b7280;
+      --line: #d1d5db;
+      --accent: #2563eb;
+      --accent-dark: #1d4ed8;
+      --soft: #eef2ff;
+      --warn: #fff7ed;
+      --warn-line: #fed7aa;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      padding: 24px;
+    }
+
+    .wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .hero, .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: 0 8px 22px rgba(0,0,0,0.06);
+      padding: 24px;
+      margin-bottom: 18px;
+    }
+
+    h1 { margin: 0 0 8px; font-size: 30px; }
+    h2 { margin: 0 0 14px; font-size: 21px; }
+    p { line-height: 1.5; }
+    .muted { color: var(--muted); }
+
+    .drop {
+      border: 2px dashed var(--line);
+      border-radius: 16px;
+      background: #fafafa;
+      padding: 26px;
+      text-align: center;
+      margin: 18px 0;
+    }
+
+    input[type="file"] {
+      margin-top: 10px;
+      font-size: 16px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 12px;
+      padding: 12px 18px;
+      background: var(--accent);
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      margin: 6px 6px 6px 0;
+    }
+
+    button:hover { background: var(--accent-dark); }
+    button.secondary { background: #374151; }
+    button:disabled { background: #9ca3af; cursor: not-allowed; }
+
+    .status {
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 12px;
+      background: var(--soft);
+      color: #1e3a8a;
+      display: none;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .summary-box {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      background: #fbfdff;
+    }
+
+    .summary-box strong {
+      display: block;
+      font-size: 24px;
+      margin-bottom: 4px;
+    }
+
+    details {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      margin: 10px 0;
+      background: white;
+      overflow: hidden;
+    }
+
+    summary {
+      padding: 14px 16px;
+      cursor: pointer;
+      font-weight: bold;
+      background: #f9fafb;
+    }
+
+    .file-list {
+      padding: 0 16px 14px;
+    }
+
+    .file-row {
+      border-top: 1px solid #eef0f2;
+      padding: 10px 0;
+      word-break: break-word;
+      font-size: 14px;
+    }
+
+    .unknown {
+      background: var(--warn);
+      border-color: var(--warn-line);
+    }
+
+    .rules {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 12px;
+    }
+
+    .rule {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      background: #fbfbfb;
+    }
+
+    .small { font-size: 13px; }
+    .hidden { display: none; }
+  </style>
 </head>
 <body>
-  <h1>Tab Curriculum Sorter</h1>
-  <p>Paste curriculum counts below.</p>
+  <div class="wrap">
+    <section class="hero">
+      <h1>Tab Curriculum ZIP Sorter</h1>
+      <p class="muted">Upload one curriculum ZIP file. This tool scans the PDF names, groups like-kind files, and creates a new sorted ZIP.</p>
+      <div class="drop">
+        <strong>Choose curriculum ZIP file</strong><br />
+        <input id="zipInput" type="file" accept=".zip,application/zip" />
+        <div id="status" class="status"></div>
+      </div>
+      <button id="scanBtn" onclick="scanZip()">Scan ZIP</button>
+      <button id="downloadBtn" onclick="downloadSortedZip()" disabled>Download Sorted ZIP</button>
+      <button class="secondary" onclick="resetApp()">Reset</button>
+    </section>
 
-  <textarea id="input" style="width:100%;height:200px;"></textarea>
-  <br><br>
-  <button onclick="processData()">Generate Packing Cards</button>
+    <section id="summaryCard" class="card hidden">
+      <h2>Scan Summary</h2>
+      <div class="summary-grid" id="summaryGrid"></div>
+    </section>
 
-  <pre id="output"></pre>
+    <section id="resultsCard" class="card hidden">
+      <h2>Grouped Files</h2>
+      <p class="muted small">Files in “Unknown - Review” will still be included in the sorted ZIP so nothing gets lost.</p>
+      <div id="results"></div>
+    </section>
+
+    <section class="card">
+      <h2>Sorting Rules</h2>
+      <div class="rules">
+        <div class="rule"><strong>Adult Personal Study Guides</strong><br><span class="small">adult, personal study, psg, study guide</span></div>
+        <div class="rule"><strong>Senior Adult Study Guides</strong><br><span class="small">senior, senior adult</span></div>
+        <div class="rule"><strong>Spanish Study Guides</strong><br><span class="small">spanish, español, espanol</span></div>
+        <div class="rule"><strong>Leader Guides</strong><br><span class="small">leader guide, leaderguide, lg</span></div>
+        <div class="rule"><strong>Leader Packs</strong><br><span class="small">leader pack, leaderpack, lp, pack item</span></div>
+        <div class="rule"><strong>Posters / Extras</strong><br><span class="small">poster, printable, extra, handout, map, resource</span></div>
+      </div>
+    </section>
+  </div>
 
   <script>
-    function processData() {
-      const input = document.getElementById('input').value;
-      const lines = input.split('\n').filter(line => line.trim() !== '');
-      let result = '';
+    let originalZip = null;
+    let grouped = {};
+    let originalFileName = 'curriculum.zip';
 
-      lines.forEach((line, index) => {
-        result += `ROOM ${index + 1}\n`;
-        result += `${line}\n`;
-        result += `-----------------------\n`;
+    const GROUPS = [
+      'Adult Personal Study Guides',
+      'Senior Adult Study Guides',
+      'Spanish Study Guides',
+      'Leader Guides',
+      'Leader Packs',
+      'Posters - Extras',
+      'Non-PDF Files',
+      'Unknown - Review'
+    ];
+
+    function setStatus(message) {
+      const status = document.getElementById('status');
+      status.style.display = 'block';
+      status.textContent = message;
+    }
+
+    function normalize(text) {
+      return text.toLowerCase().replace(/[_\-]+/g, ' ');
+    }
+
+    function classifyFile(path) {
+      const name = normalize(path);
+      const isPdf = name.endsWith('.pdf');
+
+      if (!isPdf) return 'Non-PDF Files';
+      if (name.includes('spanish') || name.includes('espanol') || name.includes('español')) return 'Spanish Study Guides';
+      if (name.includes('senior adult') || name.includes('senior')) return 'Senior Adult Study Guides';
+      if (name.includes('leader pack') || name.includes('leaderpack') || /\blp\b/.test(name) || name.includes('pack item')) return 'Leader Packs';
+      if (name.includes('leader guide') || name.includes('leaderguide') || /\blg\b/.test(name)) return 'Leader Guides';
+      if (name.includes('poster') || name.includes('printable') || name.includes('extra') || name.includes('handout') || name.includes('map') || name.includes('resource')) return 'Posters - Extras';
+      if (name.includes('adult') || name.includes('personal study') || name.includes('study guide') || /\bpsg\b/.test(name)) return 'Adult Personal Study Guides';
+
+      return 'Unknown - Review';
+    }
+
+    async function scanZip() {
+      const input = document.getElementById('zipInput');
+      const file = input.files[0];
+      if (!file) {
+        setStatus('Choose a ZIP file first.');
+        return;
+      }
+
+      originalFileName = file.name;
+      setStatus('Reading ZIP file...');
+      document.getElementById('downloadBtn').disabled = true;
+
+      try {
+        originalZip = await JSZip.loadAsync(file);
+        grouped = {};
+        GROUPS.forEach(group => grouped[group] = []);
+
+        const fileEntries = Object.values(originalZip.files).filter(entry => !entry.dir);
+
+        for (const entry of fileEntries) {
+          const group = classifyFile(entry.name);
+          grouped[group].push(entry);
+        }
+
+        renderResults(fileEntries.length);
+        document.getElementById('downloadBtn').disabled = false;
+        setStatus(`Scan complete. Found ${fileEntries.length} file(s). Review groups below, then download sorted ZIP.`);
+      } catch (error) {
+        console.error(error);
+        setStatus('Could not read this ZIP file. Try a smaller ZIP or confirm it is a normal .zip file.');
+      }
+    }
+
+    function renderResults(total) {
+      const summaryGrid = document.getElementById('summaryGrid');
+      const results = document.getElementById('results');
+      summaryGrid.innerHTML = '';
+      results.innerHTML = '';
+
+      GROUPS.forEach(group => {
+        const count = grouped[group].length;
+        const box = document.createElement('div');
+        box.className = 'summary-box' + (group === 'Unknown - Review' && count ? ' unknown' : '');
+        box.innerHTML = `<strong>${count}</strong><span>${group}</span>`;
+        summaryGrid.appendChild(box);
+
+        const details = document.createElement('details');
+        if (count > 0) details.open = true;
+        details.className = group === 'Unknown - Review' && count ? 'unknown' : '';
+
+        const summary = document.createElement('summary');
+        summary.textContent = `${group} (${count})`;
+        details.appendChild(summary);
+
+        const list = document.createElement('div');
+        list.className = 'file-list';
+        if (count === 0) {
+          const empty = document.createElement('div');
+          empty.className = 'file-row muted';
+          empty.textContent = 'No files in this group.';
+          list.appendChild(empty);
+        } else {
+          grouped[group].forEach(entry => {
+            const row = document.createElement('div');
+            row.className = 'file-row';
+            row.textContent = entry.name;
+            list.appendChild(row);
+          });
+        }
+
+        details.appendChild(list);
+        results.appendChild(details);
       });
 
-      document.getElementById('output').textContent = result;
+      document.getElementById('summaryCard').classList.remove('hidden');
+      document.getElementById('resultsCard').classList.remove('hidden');
+    }
+
+    function cleanFileName(path) {
+      const parts = path.split('/').filter(Boolean);
+      return parts[parts.length - 1] || 'file.pdf';
+    }
+
+    async function downloadSortedZip() {
+      if (!originalZip) {
+        setStatus('Scan a ZIP first.');
+        return;
+      }
+
+      setStatus('Building sorted ZIP...');
+      const newZip = new JSZip();
+
+      for (const group of GROUPS) {
+        for (const entry of grouped[group]) {
+          const data = await entry.async('arraybuffer');
+          const safeName = cleanFileName(entry.name);
+          newZip.file(`${group}/${safeName}`, data);
+        }
+      }
+
+      const blob = await newZip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const base = originalFileName.replace(/\.zip$/i, '');
+      a.href = url;
+      a.download = `${base}-SORTED.zip`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      setStatus('Sorted ZIP created and downloaded.');
+    }
+
+    function resetApp() {
+      originalZip = null;
+      grouped = {};
+      document.getElementById('zipInput').value = '';
+      document.getElementById('downloadBtn').disabled = true;
+      document.getElementById('summaryCard').classList.add('hidden');
+      document.getElementById('resultsCard').classList.add('hidden');
+      document.getElementById('results').innerHTML = '';
+      document.getElementById('summaryGrid').innerHTML = '';
+      setStatus('Reset complete. Choose a ZIP file to begin.');
     }
   </script>
 </body>
