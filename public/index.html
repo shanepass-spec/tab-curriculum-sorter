@@ -3,20 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tab Curriculum ZIP Sorter</title>
-  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <title>Tab Curriculum ZIP Sorter V4</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <style>
     :root {
-      --bg: #f5f6f8;
+      --bg: #f5f2ec;
       --card: #ffffff;
-      --ink: #1f2937;
-      --muted: #6b7280;
-      --line: #d1d5db;
-      --accent: #2563eb;
-      --soft: #eef2ff;
-      --warn: #fff7ed;
-      --danger: #fef2f2;
-      --ok: #ecfdf5;
+      --ink: #232323;
+      --muted: #666;
+      --line: #ddd6cc;
+      --accent: #7b4e2d;
+      --accent-dark: #58351d;
+      --soft: #f1e6d8;
+      --warn: #fff4d6;
     }
     * { box-sizing: border-box; }
     body {
@@ -27,121 +26,116 @@
       line-height: 1.45;
     }
     header {
-      background: #111827;
+      background: linear-gradient(135deg, #4f3422, #8a5b38);
       color: white;
-      padding: 28px 20px;
+      padding: 28px 18px;
+      text-align: center;
     }
-    header .wrap, main { max-width: 1080px; margin: 0 auto; }
-    h1 { margin: 0 0 8px; font-size: 30px; }
-    h2 { margin: 0 0 12px; font-size: 21px; }
-    h3 { margin: 16px 0 8px; font-size: 17px; }
-    p { margin: 6px 0; }
-    main { padding: 22px 18px 60px; }
-    .grid {
-      display: grid;
-      grid-template-columns: 1.4fr .9fr;
-      gap: 18px;
-    }
+    header h1 { margin: 0 0 8px; font-size: 30px; }
+    header p { margin: 0 auto; max-width: 850px; opacity: .95; }
+    main { max-width: 1150px; margin: 0 auto; padding: 22px; }
+    .grid { display: grid; grid-template-columns: 1.1fr .9fr; gap: 18px; }
     @media (max-width: 850px) { .grid { grid-template-columns: 1fr; } }
     .card {
       background: var(--card);
       border: 1px solid var(--line);
       border-radius: 16px;
       padding: 18px;
-      box-shadow: 0 2px 10px rgba(0,0,0,.04);
+      box-shadow: 0 2px 10px rgba(0,0,0,.06);
       margin-bottom: 18px;
     }
+    h2 { margin: 0 0 12px; font-size: 20px; }
+    h3 { margin: 14px 0 8px; font-size: 16px; }
     .drop {
-      border: 2px dashed #9ca3af;
-      border-radius: 16px;
+      border: 2px dashed #bca58e;
+      background: #fffaf4;
       padding: 28px;
+      border-radius: 14px;
       text-align: center;
-      background: #fafafa;
-      transition: .15s;
+      margin: 12px 0;
     }
-    .drop.dragover {
-      border-color: var(--accent);
-      background: var(--soft);
-    }
-    input[type="file"] { margin-top: 14px; }
+    .drop.dragover { background: #f2e1cd; border-color: var(--accent); }
+    input[type=file] { margin-top: 12px; }
     button {
-      border: 0;
-      border-radius: 10px;
-      padding: 11px 15px;
-      font-size: 15px;
-      cursor: pointer;
-      margin: 8px 6px 0 0;
+      border: none;
       background: var(--accent);
       color: white;
+      padding: 11px 16px;
+      border-radius: 10px;
+      font-size: 15px;
+      cursor: pointer;
+      margin: 6px 5px 6px 0;
     }
-    button.secondary { background: #4b5563; }
+    button:hover { background: var(--accent-dark); }
+    button.secondary { background: #555; }
     button:disabled { opacity: .45; cursor: not-allowed; }
     .stats {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(4, 1fr);
       gap: 10px;
       margin-top: 14px;
     }
-    @media (max-width: 650px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 700px) { .stats { grid-template-columns: repeat(2, 1fr); } }
     .stat {
-      border: 1px solid var(--line);
-      border-radius: 12px;
+      background: var(--soft);
       padding: 12px;
-      background: #fafafa;
+      border-radius: 12px;
+      text-align: center;
     }
     .stat strong { display: block; font-size: 24px; }
-    .muted { color: var(--muted); }
-    .pill {
-      display: inline-block;
-      border-radius: 999px;
-      background: #e5e7eb;
-      padding: 3px 9px;
-      font-size: 12px;
-      margin: 2px 4px 2px 0;
-    }
+    .muted { color: var(--muted); font-size: 14px; }
     .group {
       border: 1px solid var(--line);
       border-radius: 12px;
-      margin: 12px 0;
+      margin: 10px 0;
       overflow: hidden;
     }
-    .group summary {
-      cursor: pointer;
-      background: #f9fafb;
-      padding: 12px 14px;
+    .group-title {
+      background: #f7efe6;
+      padding: 10px 12px;
       font-weight: bold;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
     }
-    .group-body { padding: 10px 14px; }
-    .file {
-      border-top: 1px solid #eef0f3;
-      padding: 8px 0;
-      font-size: 14px;
+    .files { padding: 10px 14px; max-height: 340px; overflow: auto; }
+    .file-row {
+      padding: 6px 0;
+      border-bottom: 1px solid #eee;
+      font-size: 13px;
       word-break: break-word;
     }
-    .file:first-child { border-top: none; }
-    .path { color: var(--muted); font-size: 12px; }
-    .warn { background: var(--warn); }
-    .danger { background: var(--danger); }
-    .ok { background: var(--ok); }
-    code, pre {
-      background: #f3f4f6;
-      border-radius: 8px;
-      padding: 2px 5px;
+    .file-row:last-child { border-bottom: none; }
+    .pill {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: #e9ded2;
+      margin-left: 5px;
+      font-size: 12px;
+      font-weight: normal;
     }
-    pre {
+    .warning {
+      background: var(--warn);
+      border: 1px solid #e8c96b;
       padding: 12px;
-      overflow-x: auto;
-      white-space: pre-wrap;
+      border-radius: 12px;
+      margin-top: 10px;
     }
+    code {
+      background: #f1f1f1;
+      padding: 2px 5px;
+      border-radius: 5px;
+    }
+    .rules ul { margin-top: 6px; padding-left: 20px; }
     .small { font-size: 13px; }
+    footer { text-align:center; padding: 20px; color: var(--muted); }
   </style>
 </head>
 <body>
 <header>
-  <div class="wrap">
-    <h1>Tab Curriculum ZIP Sorter</h1>
-    <p>Upload one curriculum ZIP. This scans every filename, detects sessions/variants, groups like-kind PDFs, and downloads a newly organized ZIP.</p>
-  </div>
+  <h1>Tab Curriculum ZIP Sorter — V4</h1>
+  <p>Audience-first sorting for Adult, Senior Adult, and Spanish curriculum. Organizes like-kind resources into chronological teaching order as best as filenames allow.</p>
 </header>
 
 <main>
@@ -149,15 +143,15 @@
     <section>
       <div class="card">
         <h2>1. Upload Curriculum ZIP</h2>
+        <p class="muted">This version does not open PDFs one at a time. It scans filenames and folder paths, then builds a newly organized ZIP.</p>
         <div id="drop" class="drop">
-          <strong>Drag ZIP file here</strong>
-          <p class="muted">or use the file picker below</p>
+          <strong>Drag ZIP file here</strong><br>
+          <span class="muted">or use the file picker below</span><br>
           <input id="fileInput" type="file" accept=".zip,application/zip" />
         </div>
-        <button id="scanBtn" disabled>Scan ZIP</button>
+        <button id="scanBtn">Scan ZIP</button>
         <button id="downloadBtn" disabled>Download Sorted ZIP</button>
         <button id="resetBtn" class="secondary">Reset</button>
-
         <div class="stats">
           <div class="stat"><strong id="totalFiles">0</strong><span>Total files</span></div>
           <div class="stat"><strong id="pdfFiles">0</strong><span>PDF files</span></div>
@@ -168,339 +162,344 @@
 
       <div class="card">
         <h2>2. Review Groups</h2>
-        <div id="review">
-          <p class="muted">No ZIP scanned yet.</p>
-        </div>
+        <div id="review"><p class="muted">No ZIP scanned yet.</p></div>
       </div>
     </section>
 
     <aside>
       <div class="card">
-        <h2>Version 3 Improvements</h2>
-        <p><span class="pill">Session folders</span><span class="pill">CS/KJ detection</span><span class="pill">Duplicate handling</span></p>
-        <p class="small muted">Output now tries to organize by category, then session, then variant.</p>
+        <h2>V4 Structure</h2>
+        <p>The sorted ZIP is designed for human reading and ministry prep:</p>
+        <pre class="small">Adult/
+  Unit 01/
+    01 - Session 01/
+      Leader Guides/
+      Learner Guides/
+      Teaching Packets/
+
+Senior Adult/
+Spanish/
+Unknown - Review/
+_SORTING REPORT.txt</pre>
+        <div class="warning small">
+          <strong>Important:</strong> Adult and Senior Adult are treated as CSB. Spanish is treated as Spanish. This version does not use King James or KJV labels.
+        </div>
+      </div>
+
+      <div class="card rules">
+        <h2>Sorting Priorities</h2>
+        <h3>Audience</h3>
+        <ul>
+          <li>Adult</li>
+          <li>Senior Adult</li>
+          <li>Spanish</li>
+        </ul>
+        <h3>Resource Types</h3>
+        <ul>
+          <li>Leader Guides</li>
+          <li>Learner / Personal Study Guides</li>
+          <li>Teaching Packets / Leader Packs</li>
+          <li>Posters / Extras / Handouts</li>
+        </ul>
+        <h3>Chronology</h3>
+        <ul>
+          <li>Unit number when detected</li>
+          <li>Session number when detected</li>
+          <li>Lesson title keywords when detected</li>
+        </ul>
       </div>
 
       <div class="card">
-        <h2>Sorting Rules</h2>
-        <h3>Leader Guides</h3>
-        <p class="small">leader guide, leaderguide, lg, _lg, -lg, teacher guide</p>
-        <h3>Leader Packs</h3>
-        <p class="small">leader pack, leaderpack, lp, _lp, -lp, pack item, packitems</p>
-        <h3>Senior Adult Study Guides</h3>
-        <p class="small">senior adult, senior, sa psg, sa study</p>
-        <h3>Spanish Study Guides</h3>
-        <p class="small">spanish, español, espanol, adult spanish, span</p>
-        <h3>Adult Personal Study Guides</h3>
-        <p class="small">personal study, psg, study guide, adult psg, adult study</p>
-        <h3>Posters / Extras / Handouts</h3>
-        <p class="small">poster, printable, extra, handout, map, resource, schedule, flyer, presentation, visual</p>
-      </div>
-
-      <div class="card warn">
-        <h2>Unknown Review Notes</h2>
-        <p class="small">After a scan, copy unknown filenames back into Scout so rules can be tightened.</p>
+        <h2>Known Limitation</h2>
+        <p class="small">If Lifeway uses repeated “Session 1” files across Unit 1 and Unit 2, this app needs the unit/title clues from the filename or folder path. The future best version will read the table-of-contents PDF and use it as the master lesson map.</p>
       </div>
     </aside>
   </div>
 </main>
 
+<footer>Tab Curriculum ZIP Sorter V4</footer>
+
 <script>
 let selectedFile = null;
-let originalZip = null;
-let analyzedFiles = [];
-let sortedZipBlob = null;
+let scannedEntries = [];
+let outputZip = null;
 
-const rules = [
-  { key: "Leader Guides", folder: "Leader Guides", terms: ["leader guide", "leaderguide", " lg ", "_lg", "-lg", "teacher guide"] },
-  { key: "Leader Packs", folder: "Leader Packs", terms: ["leader pack", "leaderpack", " lp ", "_lp", "-lp", "pack item", "pack_items", "packitems"] },
-  { key: "Senior Adult Study Guides", folder: "Senior Adult Study Guides", terms: ["senior adult", "senior", "sa psg", "sa study"] },
-  { key: "Spanish Study Guides", folder: "Spanish Study Guides", terms: ["spanish", "español", "espanol", "adult spanish", " span "] },
-  { key: "Adult Personal Study Guides", folder: "Adult Personal Study Guides", terms: ["personal study", "psg", "study guide", "adult psg", "adult study"] },
-  { key: "Posters - Extras - Handouts", folder: "Posters - Extras - Handouts", terms: ["poster", "printable", "extra", "handout", "map", "resource", "schedule", "flyer", "presentation", "visual"] },
+const lessonMap = [
+  { unit: "Unit 01 - God Is", session: "01 - Session 01 - God Is Holy", keys: ["god is holy", "holy"] },
+  { unit: "Unit 01 - God Is", session: "02 - Session 02 - God Is Just", keys: ["god is just", "just"] },
+  { unit: "Unit 01 - God Is", session: "03 - Session 03", keys: ["god is", "character of god"] },
+  { unit: "Unit 02 - Seize the Day", session: "01 - Session 01", keys: ["seize the day", "mission full of opportunities", "opportunities"] },
+  { unit: "Unit 03 - Don't Forget to Remember", session: "01 - Session 01", keys: ["don't forget", "dont forget", "remember"] }
 ];
 
-const els = {
-  drop: document.getElementById("drop"),
-  fileInput: document.getElementById("fileInput"),
-  scanBtn: document.getElementById("scanBtn"),
-  downloadBtn: document.getElementById("downloadBtn"),
-  resetBtn: document.getElementById("resetBtn"),
-  review: document.getElementById("review"),
-  totalFiles: document.getElementById("totalFiles"),
-  pdfFiles: document.getElementById("pdfFiles"),
-  unknownFiles: document.getElementById("unknownFiles"),
-  duplicateFiles: document.getElementById("duplicateFiles")
-};
+const audienceRules = [
+  { name: "Senior Adult", keys: ["senior adult", "senior", "sa "] },
+  { name: "Spanish", keys: ["spanish", "español", "espanol", "span "] },
+  { name: "Adult", keys: ["adult", "csb", "personal study", "leader guide", "leader pack", "learner guide"] }
+];
 
-function safeFolderName(name) {
-  return String(name || "Unknown")
-    .replace(/[\\/:*?"<>|]+/g, "-")
-    .replace(/\s+/g, " ")
-    .trim();
-}
+const resourceRules = [
+  { name: "Leader Guides", keys: ["leader guide", "leaderguide", "teacher guide", "lg "] },
+  { name: "Teaching Packets", keys: ["leader pack", "leaderpack", "teaching packet", "pack item", "packitems", "lp "] },
+  { name: "Learner Guides", keys: ["personal study", "study guide", "learner guide", "psg"] },
+  { name: "Posters - Extras - Handouts", keys: ["poster", "printable", "extra", "handout", "map", "resource", "schedule", "flyer", "presentation", "visual"] }
+];
 
-function safeFileName(name) {
-  const parts = name.split("/");
-  return safeFolderName(parts[parts.length - 1] || "file.pdf");
-}
-
-function normalizeName(path) {
-  return path.toLowerCase()
+function norm(s) {
+  return (s || "")
+    .toLowerCase()
     .replace(/[_\-\.]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
 
-function detectCategory(path) {
-  const normalized = " " + normalizeName(path) + " ";
-  for (const rule of rules) {
-    if (rule.terms.some(term => normalized.includes(term))) return rule.folder;
+function safeName(s) {
+  return (s || "Unknown")
+    .replace(/[<>:"/\\|?*]+/g, "-")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function includesAny(text, keys) {
+  return keys.some(k => text.includes(norm(k)));
+}
+
+function detectAudience(path) {
+  const n = norm(path);
+  if (includesAny(n, ["spanish", "español", "espanol"])) return "Spanish";
+  if (includesAny(n, ["senior adult", "senior"])) return "Senior Adult";
+  return "Adult";
+}
+
+function detectResource(path) {
+  const n = norm(path);
+  for (const rule of resourceRules) {
+    if (includesAny(n, rule.keys)) return rule.name;
   }
-  return path.toLowerCase().endsWith(".pdf") ? "Unknown - Review" : "Non-PDF Files";
+  return "Unknown Resource Type";
 }
 
-function detectSession(path) {
-  const normalized = normalizeName(path);
-  const patterns = [
-    /\bsession\s*0?(\d{1,2})\b/i,
-    /\bsess\s*0?(\d{1,2})\b/i,
-    /\bunit\s*\d+\s*session\s*0?(\d{1,2})\b/i,
-    /\bweek\s*0?(\d{1,2})\b/i,
-    /\blesson\s*0?(\d{1,2})\b/i,
-    /\bs0?(\d{1,2})\b/i
-  ];
-  for (const re of patterns) {
-    const m = normalized.match(re);
-    if (m && m[1]) return "Session " + String(Number(m[1])).padStart(2, "0");
-  }
-  return "No Session Detected";
-}
+function detectUnitSession(path) {
+  const n = norm(path);
 
-function detectVariant(path) {
-  const normalized = " " + normalizeName(path) + " ";
-  if (/\bcs\b/.test(normalized) || normalized.includes(" christ centered ")) return "CS";
-  if (/\bkj\b/.test(normalized) || normalized.includes(" king james ")) return "KJ";
-  if (normalized.includes("spanish") || normalized.includes("espanol") || normalized.includes("español")) return "Spanish";
-  if (normalized.includes("senior")) return "Senior Adult";
-  return "General";
-}
+  let unitMatch = n.match(/\bunit\s*(\d{1,2})\b/);
+  let sessionMatch = n.match(/\bsession\s*(\d{1,2})\b/);
 
-function classifyFile(path, isDuplicate) {
-  const category = detectCategory(path);
-  const session = detectSession(path);
-  const variant = detectVariant(path);
-  const fileName = safeFileName(path);
-  const isPdf = path.toLowerCase().endsWith(".pdf");
-
-  let outputPath;
-  if (!isPdf) {
-    outputPath = "Non-PDF Files/" + safeFileName(path);
-  } else if (category === "Unknown - Review") {
-    outputPath = "Unknown - Review/" + session + "/" + variant + "/" + fileName;
-  } else {
-    outputPath = category + "/" + session + "/" + variant + "/" + fileName;
+  for (const lesson of lessonMap) {
+    if (includesAny(n, lesson.keys)) {
+      return { unit: lesson.unit, session: lesson.session };
+    }
   }
 
-  if (isDuplicate) {
-    outputPath = "Duplicates - Review/" + outputPath;
+  const unit = unitMatch ? `Unit ${String(unitMatch[1]).padStart(2, "0")}` : "Unit Unknown";
+  const session = sessionMatch ? `Session ${String(sessionMatch[1]).padStart(2, "0")}` : "Session Unknown";
+  return { unit, session };
+}
+
+function isPdf(name) {
+  return name.toLowerCase().endsWith(".pdf");
+}
+
+function getBaseName(path) {
+  return path.split("/").pop();
+}
+
+function makeSortedPath(entry) {
+  if (!isPdf(entry.path)) {
+    return `Non-PDF Files/${safeName(entry.path)}`;
   }
 
-  return { path, fileName, isPdf, category, session, variant, outputPath, isDuplicate };
-}
+  const audience = detectAudience(entry.path);
+  const resource = detectResource(entry.path);
+  const us = detectUnitSession(entry.path);
 
-function setSelectedFile(file) {
-  selectedFile = file;
-  els.scanBtn.disabled = !file;
-  sortedZipBlob = null;
-  els.downloadBtn.disabled = true;
-  if (file) {
-    els.review.innerHTML = `<p><strong>Selected:</strong> ${escapeHtml(file.name)}</p><p class="muted">Click Scan ZIP.</p>`;
+  if (resource === "Unknown Resource Type") {
+    return `Unknown - Review/${safeName(entry.path)}`;
   }
+
+  return `${safeName(audience)}/${safeName(us.unit)}/${safeName(us.session)}/${safeName(resource)}/${safeName(getBaseName(entry.path))}`;
 }
 
-function escapeHtml(str) {
-  return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[s]));
-}
-
-els.fileInput.addEventListener("change", e => setSelectedFile(e.target.files[0]));
-
-["dragenter", "dragover"].forEach(evt => {
-  els.drop.addEventListener(evt, e => {
-    e.preventDefault();
-    els.drop.classList.add("dragover");
+function buildReport(entries, grouped, duplicates) {
+  let lines = [];
+  lines.push("TAB CURRICULUM ZIP SORTER — V4 REPORT");
+  lines.push(`Generated: ${new Date().toLocaleString()}`);
+  lines.push("");
+  lines.push(`Total files: ${entries.length}`);
+  lines.push(`PDF files: ${entries.filter(e => isPdf(e.path)).length}`);
+  lines.push(`Unknown review: ${entries.filter(e => e.sortedPath.startsWith("Unknown - Review/")).length}`);
+  lines.push(`Duplicate names: ${duplicates.length}`);
+  lines.push("");
+  lines.push("AUDIENCE RULE:");
+  lines.push("- Adult and Senior Adult are CSB.");
+  lines.push("- Spanish is Spanish.");
+  lines.push("- No King James / KJV labels are used.");
+  lines.push("");
+  lines.push("GROUP SUMMARY:");
+  Object.keys(grouped).sort().forEach(group => {
+    lines.push(`- ${group}: ${grouped[group].length}`);
   });
-});
-["dragleave", "drop"].forEach(evt => {
-  els.drop.addEventListener(evt, e => {
-    e.preventDefault();
-    els.drop.classList.remove("dragover");
+  lines.push("");
+  if (duplicates.length) {
+    lines.push("DUPLICATE BASENAMES:");
+    duplicates.forEach(d => lines.push(`- ${d}`));
+    lines.push("");
+  }
+  lines.push("UNKNOWN REVIEW ITEMS:");
+  entries.filter(e => e.sortedPath.startsWith("Unknown - Review/")).forEach(e => {
+    lines.push(`- ${e.path}`);
   });
-});
-els.drop.addEventListener("drop", e => {
-  const file = e.dataTransfer.files[0];
-  if (file) setSelectedFile(file);
-});
+  return lines.join("\n");
+}
 
-els.scanBtn.addEventListener("click", scanZip);
-els.downloadBtn.addEventListener("click", downloadSortedZip);
-els.resetBtn.addEventListener("click", resetApp);
+function groupEntries(entries) {
+  const grouped = {};
+  entries.forEach(e => {
+    const top = e.sortedPath.split("/").slice(0, 4).join(" / ");
+    if (!grouped[top]) grouped[top] = [];
+    grouped[top].push(e);
+  });
+  return grouped;
+}
+
+function findDuplicates(entries) {
+  const seen = {};
+  entries.forEach(e => {
+    const b = getBaseName(e.path).toLowerCase();
+    seen[b] = (seen[b] || 0) + 1;
+  });
+  return Object.keys(seen).filter(k => seen[k] > 1);
+}
+
+function updateStats(entries, duplicates) {
+  document.getElementById("totalFiles").textContent = entries.length;
+  document.getElementById("pdfFiles").textContent = entries.filter(e => isPdf(e.path)).length;
+  document.getElementById("unknownFiles").textContent = entries.filter(e => e.sortedPath.startsWith("Unknown - Review/")).length;
+  document.getElementById("duplicateFiles").textContent = duplicates.length;
+}
+
+function renderReview(grouped) {
+  const review = document.getElementById("review");
+  review.innerHTML = "";
+  const keys = Object.keys(grouped).sort();
+  if (!keys.length) {
+    review.innerHTML = "<p class='muted'>No files found.</p>";
+    return;
+  }
+
+  keys.forEach(group => {
+    const wrap = document.createElement("div");
+    wrap.className = "group";
+
+    const title = document.createElement("div");
+    title.className = "group-title";
+    title.innerHTML = `<span>${group}</span><span class="pill">${grouped[group].length}</span>`;
+
+    const files = document.createElement("div");
+    files.className = "files";
+
+    grouped[group].forEach(e => {
+      const row = document.createElement("div");
+      row.className = "file-row";
+      row.textContent = e.path;
+      files.appendChild(row);
+    });
+
+    wrap.appendChild(title);
+    wrap.appendChild(files);
+    review.appendChild(wrap);
+  });
+}
 
 async function scanZip() {
-  if (!selectedFile) return;
-
-  els.review.innerHTML = "<p>Scanning ZIP...</p>";
-  els.scanBtn.disabled = true;
-  els.downloadBtn.disabled = true;
-
-  try {
-    originalZip = await JSZip.loadAsync(selectedFile);
-    const paths = Object.keys(originalZip.files).filter(path => !originalZip.files[path].dir);
-
-    const baseNameCounts = {};
-    paths.forEach(path => {
-      const base = safeFileName(path).toLowerCase();
-      baseNameCounts[base] = (baseNameCounts[base] || 0) + 1;
-    });
-
-    analyzedFiles = paths.map(path => {
-      const base = safeFileName(path).toLowerCase();
-      return classifyFile(path, baseNameCounts[base] > 1);
-    });
-
-    await buildSortedZip();
-    renderReview();
-  } catch (err) {
-    els.review.innerHTML = `<div class="card danger"><strong>Error:</strong> ${escapeHtml(err.message || err)}</div>`;
-  } finally {
-    els.scanBtn.disabled = false;
-  }
-}
-
-async function buildSortedZip() {
-  const out = new JSZip();
-  const report = makeReportText();
-
-  out.file("_SORTING REPORT.txt", report);
-
-  for (const item of analyzedFiles) {
-    const source = originalZip.files[item.path];
-    if (!source) continue;
-    const blob = await source.async("blob");
-    out.file(item.outputPath, blob);
+  if (!selectedFile) {
+    alert("Choose a ZIP file first.");
+    return;
   }
 
-  sortedZipBlob = await out.generateAsync({ type: "blob" });
-  els.downloadBtn.disabled = false;
+  const arrayBuffer = await selectedFile.arrayBuffer();
+  const zip = await JSZip.loadAsync(arrayBuffer);
+  const entries = [];
+
+  zip.forEach((relativePath, file) => {
+    if (!file.dir) {
+      entries.push({ path: relativePath, file });
+    }
+  });
+
+  scannedEntries = entries.map(e => ({
+    path: e.path,
+    file: e.file,
+    sortedPath: makeSortedPath(e)
+  }));
+
+  const duplicates = findDuplicates(scannedEntries);
+  const grouped = groupEntries(scannedEntries);
+
+  updateStats(scannedEntries, duplicates);
+  renderReview(grouped);
+
+  outputZip = new JSZip();
+
+  for (const e of scannedEntries) {
+    const data = await e.file.async("arraybuffer");
+    outputZip.file(e.sortedPath, data);
+  }
+
+  const report = buildReport(scannedEntries, grouped, duplicates);
+  outputZip.file("_SORTING REPORT.txt", report);
+
+  document.getElementById("downloadBtn").disabled = false;
 }
 
-function makeReportText() {
-  const total = analyzedFiles.length;
-  const pdfs = analyzedFiles.filter(f => f.isPdf).length;
-  const unknown = analyzedFiles.filter(f => f.category === "Unknown - Review").length;
-  const dupes = analyzedFiles.filter(f => f.isDuplicate).length;
-
-  let text = "";
-  text += "Tab Curriculum ZIP Sorter - Sorting Report\n";
-  text += "==========================================\n\n";
-  text += `Total files: ${total}\n`;
-  text += `PDF files: ${pdfs}\n`;
-  text += `Unknown review: ${unknown}\n`;
-  text += `Duplicate names: ${dupes}\n\n`;
-
-  text += "Unknown Review Files\n";
-  text += "--------------------\n";
-  analyzedFiles.filter(f => f.category === "Unknown - Review").forEach(f => {
-    text += `- ${f.path}\n`;
-  });
-
-  text += "\nAll Output Paths\n";
-  text += "----------------\n";
-  analyzedFiles.forEach(f => {
-    text += `${f.path} -> ${f.outputPath}\n`;
-  });
-
-  return text;
-}
-
-function renderReview() {
-  const total = analyzedFiles.length;
-  const pdfs = analyzedFiles.filter(f => f.isPdf).length;
-  const unknown = analyzedFiles.filter(f => f.category === "Unknown - Review").length;
-  const dupes = analyzedFiles.filter(f => f.isDuplicate).length;
-
-  els.totalFiles.textContent = total;
-  els.pdfFiles.textContent = pdfs;
-  els.unknownFiles.textContent = unknown;
-  els.duplicateFiles.textContent = dupes;
-
-  const grouped = {};
-  analyzedFiles.forEach(item => {
-    const key = item.category;
-    if (!grouped[key]) grouped[key] = [];
-    grouped[key].push(item);
-  });
-
-  const order = [
-    "Leader Guides",
-    "Leader Packs",
-    "Adult Personal Study Guides",
-    "Senior Adult Study Guides",
-    "Spanish Study Guides",
-    "Posters - Extras - Handouts",
-    "Unknown - Review",
-    "Non-PDF Files"
-  ];
-
-  let html = "";
-  order.filter(k => grouped[k]).forEach(groupName => {
-    const items = grouped[groupName];
-    const danger = groupName === "Unknown - Review" ? " danger" : "";
-    html += `<details class="group${danger}" open>`;
-    html += `<summary>${escapeHtml(groupName)} — ${items.length}</summary>`;
-    html += `<div class="group-body">`;
-    items.forEach(item => {
-      html += `<div class="file">`;
-      html += `<strong>${escapeHtml(item.fileName)}</strong><br>`;
-      html += `<span class="pill">${escapeHtml(item.session)}</span>`;
-      html += `<span class="pill">${escapeHtml(item.variant)}</span>`;
-      if (item.isDuplicate) html += `<span class="pill">Duplicate</span>`;
-      html += `<div class="path">${escapeHtml(item.outputPath)}</div>`;
-      html += `</div>`;
-    });
-    html += `</div></details>`;
-  });
-
-  if (!html) html = `<p class="muted">No files found.</p>`;
-  els.review.innerHTML = html;
-}
-
-function downloadSortedZip() {
-  if (!sortedZipBlob) return;
+async function downloadSortedZip() {
+  if (!outputZip) return;
+  const blob = await outputZip.generateAsync({ type: "blob" });
   const a = document.createElement("a");
-  const cleanName = selectedFile.name.replace(/\.zip$/i, "");
-  a.href = URL.createObjectURL(sortedZipBlob);
-  a.download = cleanName + "-SORTED-V3.zip";
+  const original = selectedFile ? selectedFile.name.replace(/\.zip$/i, "") : "curriculum";
+  a.href = URL.createObjectURL(blob);
+  a.download = `${original}-SORTED-V4.zip`;
   document.body.appendChild(a);
   a.click();
   a.remove();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
-function resetApp() {
+function resetAll() {
   selectedFile = null;
-  originalZip = null;
-  analyzedFiles = [];
-  sortedZipBlob = null;
-  els.fileInput.value = "";
-  els.scanBtn.disabled = true;
-  els.downloadBtn.disabled = true;
-  els.totalFiles.textContent = "0";
-  els.pdfFiles.textContent = "0";
-  els.unknownFiles.textContent = "0";
-  els.duplicateFiles.textContent = "0";
-  els.review.innerHTML = `<p class="muted">No ZIP scanned yet.</p>`;
+  scannedEntries = [];
+  outputZip = null;
+  document.getElementById("fileInput").value = "";
+  document.getElementById("downloadBtn").disabled = true;
+  updateStats([], []);
+  document.getElementById("review").innerHTML = "<p class='muted'>No ZIP scanned yet.</p>";
 }
+
+const fileInput = document.getElementById("fileInput");
+fileInput.addEventListener("change", e => {
+  selectedFile = e.target.files[0] || null;
+});
+
+document.getElementById("scanBtn").addEventListener("click", scanZip);
+document.getElementById("downloadBtn").addEventListener("click", downloadSortedZip);
+document.getElementById("resetBtn").addEventListener("click", resetAll);
+
+const drop = document.getElementById("drop");
+drop.addEventListener("dragover", e => {
+  e.preventDefault();
+  drop.classList.add("dragover");
+});
+drop.addEventListener("dragleave", () => drop.classList.remove("dragover"));
+drop.addEventListener("drop", e => {
+  e.preventDefault();
+  drop.classList.remove("dragover");
+  const file = e.dataTransfer.files[0];
+  if (file && file.name.toLowerCase().endsWith(".zip")) {
+    selectedFile = file;
+    fileInput.files = e.dataTransfer.files;
+  } else {
+    alert("Please drop a ZIP file.");
+  }
+});
 </script>
 </body>
 </html>
