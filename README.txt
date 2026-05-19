@@ -1,19 +1,30 @@
-# Tab Curriculum ZIP Sorter
+# Tab Curriculum ZIP Sorter — V6
 
-Version 5 focuses on Tabernacle's real Sunday School curriculum workflow.
+A browser-based ZIP sorter for Tabernacle Sunday School curriculum files.
 
-## V5 priorities
+## V6 Fixes
 
-- Audience-first output: Adult, Senior Adult, Spanish
-- CSB-only default for Adult and Senior Adult
-- Spanish kept for Spanish curriculum
-- KJV/KJ/King James files are not used by Tabernacle and are moved to review/excluded folders
-- Unit + session awareness for Spring 2026
-- Chronological lesson folders
-- Resource-type folders inside each lesson
-- Sorting report generated in every download
+- Skips Mac junk files:
+  - `__MACOSX`
+  - `.DS_Store`
+  - `._` AppleDouble shadow files
+- Excludes KJV / KJ / King James resources across PDF and non-PDF files.
+- Keeps the Tabernacle-used lanes clear:
+  - Adult CSB
+  - Senior Adult CSB
+  - Spanish
+- Preserves useful non-PDF files separately.
+- Uses the Spring 2026 map for unit/date/session/title ordering.
+- Adds a cleaner `_SORTING REPORT.txt`.
 
-## Core workflow
+## Current Limitation
 
-Upload the Lifeway curriculum ZIP, scan, review, and download a newly organized ZIP.
+The Spring 2026 lesson map is still built in. The next version should support Quarter Map Mode so Summer/Fall/Winter can be added without rewriting the app.
 
+## Deployment
+
+Cloudflare serves files from:
+
+```text
+public/
+```
