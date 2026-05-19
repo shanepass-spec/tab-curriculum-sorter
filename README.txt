@@ -1,18 +1,12 @@
-# Tab Curriculum ZIP Sorter — V8
+# Tab Curriculum ZIP Sorter — V9
 
-Audience-first Sunday School curriculum sorter and packet builder.
+V9 adds TabReady Export Mode.
 
-## V8 Focus
+It sorts Lifeway curriculum ZIP files, creates teacher packet PDFs from existing PDFs, and outputs a TabReady-ready import package containing:
 
-- Upload one curriculum ZIP.
-- Sort Adult CSB, Senior Adult CSB, and Spanish into separate lanes.
-- Use a built-in Spring 2026 map or paste a custom quarter map for Summer/Fall/Winter.
-- Keep repeated session numbers separated by unit/date/title.
-- Exclude KJV/KJ/King James files by default for Tabernacle use.
-- Skip Mac junk files.
-- Preserve useful non-PDF files separately.
-- Build teacher-ready PDF packet placeholders inside each session folder.
+- `TABREADY_IMPORT/manifest.json`
+- `TABREADY_IMPORT/curriculum/...` PDF packet files
+- regular sorted curriculum folders
+- clean sorting report
 
-## Important Note
-
-The browser can sort and bundle existing PDFs. It does not convert Word/image files into PDF. Since this project is mainly for teachers/students who lost books or are traveling, the PDF-first workflow should be sufficient in most cases.
+This version does not directly modify TabReady. It prepares the package shape needed for a future TabReady import endpoint.
