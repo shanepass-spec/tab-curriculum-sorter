@@ -2,84 +2,512 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Tab Curriculum ZIP Sorter — V9.2</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Tab Curriculum ZIP Sorter — V10</title>
 <style>
-  body{font-family:Arial,sans-serif;background:#f5f6f8;margin:0;color:#202124} .wrap{max-width:1100px;margin:0 auto;padding:28px}
-  .card{background:white;border-radius:14px;padding:22px;margin:16px 0;box-shadow:0 2px 10px rgba(0,0,0,.08)}
-  h1{margin:0 0 8px;font-size:28px} h2{margin-top:0}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
-  label{display:block;font-weight:600;margin:10px 0 4px} input,select,textarea{width:100%;box-sizing:border-box;padding:10px;border:1px solid #ccd0d5;border-radius:8px;font-size:15px} textarea{min-height:95px;font-family:monospace}
-  .drop{border:2px dashed #9aa5b1;border-radius:12px;padding:22px;text-align:center;background:#fbfcfd}.drop.drag{background:#eaf3ff;border-color:#3b82f6}
-  button{border:0;border-radius:8px;padding:12px 16px;margin:8px 8px 8px 0;font-weight:700;cursor:pointer;background:#1f6feb;color:white} button.secondary{background:#6b7280} button:disabled{opacity:.45;cursor:not-allowed}
-  .checks label{font-weight:400;display:flex;gap:8px;align-items:center}.checks input{width:auto}.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}.stat{background:#f1f5f9;border-radius:10px;padding:12px}.num{font-size:26px;font-weight:800}.small{color:#5f6368;font-size:13px}.report{white-space:pre-wrap;background:#111827;color:#e5e7eb;padding:16px;border-radius:10px;max-height:360px;overflow:auto;font-family:ui-monospace,Menlo,monospace;font-size:13px}.pill{display:inline-block;background:#eef2ff;border:1px solid #c7d2fe;border-radius:999px;padding:4px 9px;margin:3px;font-size:12px}
+  :root { --bg:#f6f7f9; --card:#fff; --ink:#1f2937; --muted:#6b7280; --line:#d1d5db; --accent:#2563eb; --good:#047857; --warn:#b45309; }
+  body { font-family: Arial, Helvetica, sans-serif; background:var(--bg); color:var(--ink); margin:0; padding:28px; }
+  .wrap { max-width:1100px; margin:0 auto; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:22px; margin:0 0 18px; box-shadow:0 1px 4px rgba(0,0,0,.06); }
+  h1 { margin:0 0 8px; font-size:28px; }
+  h2 { margin:0 0 14px; font-size:20px; }
+  h3 { margin:18px 0 8px; font-size:16px; }
+  p { color:var(--muted); line-height:1.45; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:14px; }
+  label { display:block; font-weight:700; margin-bottom:6px; }
+  input[type="text"], select, textarea { width:100%; box-sizing:border-box; border:1px solid var(--line); border-radius:10px; padding:10px; font-size:14px; background:#fff; }
+  textarea { min-height:118px; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .drop { border:2px dashed #9ca3af; border-radius:14px; padding:28px; text-align:center; background:#fafafa; }
+  .drop.drag { border-color:var(--accent); background:#eff6ff; }
+  .checks label { font-weight:400; margin:8px 0; }
+  button { border:0; border-radius:10px; padding:12px 16px; font-weight:700; cursor:pointer; margin:6px 8px 6px 0; }
+  button.primary { background:var(--accent); color:white; }
+  button.secondary { background:#e5e7eb; color:#111827; }
+  button:disabled { opacity:.5; cursor:not-allowed; }
+  .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px; margin-top:12px; }
+  .stat { background:#f9fafb; border:1px solid var(--line); border-radius:12px; padding:12px; }
+  .stat b { display:block; font-size:22px; }
+  pre { white-space:pre-wrap; background:#111827; color:#f9fafb; border-radius:12px; padding:16px; overflow:auto; max-height:420px; }
+  .badge { display:inline-block; border-radius:999px; padding:4px 10px; margin:4px 6px 0 0; background:#e0f2fe; color:#075985; font-size:12px; font-weight:700; }
+  .note { background:#fffbeb; border:1px solid #fde68a; color:#92400e; border-radius:12px; padding:12px; }
+  .ok { color:var(--good); font-weight:700; }
+  .small { font-size:13px; color:var(--muted); }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
 </head>
-<body><div class="wrap">
-<div class="card"><h1>Tab Curriculum ZIP Sorter — V9.2</h1><p>Stable V8 sorter plus TabReady import package. Fixes V9.1 excluded/non-PDF file-copy failure.</p></div>
-<div class="card"><h2>Quarter Setup</h2><div class="grid"><div><label>Quarter mode</label><select id="quarterMode"><option value="spring2026">Spring 2026 built-in map</option><option value="custom">Custom lesson map</option></select></div><div><label>Quarter ID for TabReady</label><input id="quarterId" value="2026_Q2"></div><div><label>Event tag</label><input id="eventTag" value="curriculum_2026_Q2"></div><div><label>Display title</label><input id="displayTitle" value="Spring 2026 Sunday School"></div></div><label>Custom lesson map</label><div class="small">Format: YYYY-MM-DD | Unit Name | Session Number | Lesson Title</div><textarea id="customMap">2026-06-07 | Unit 1 - Example | 1 | Lesson Title</textarea></div>
-<div class="card"><h2>1. Upload Curriculum ZIP</h2><div id="drop" class="drop">Drag ZIP file here<br><span class="small">or use the file picker below</span></div><input type="file" id="fileInput" accept=".zip"><div class="checks"><label><input type="checkbox" id="excludeKjv" checked> Exclude KJV / KJ / King James files</label><label><input type="checkbox" id="skipJunk" checked> Skip Mac junk files</label><label><input type="checkbox" id="preserveNonPdf" checked> Preserve useful non-PDF support files separately</label><label><input type="checkbox" id="createPackets" checked> Create Teacher Packet.pdf from existing PDFs</label><label><input type="checkbox" id="createTabReady" checked> Create TABREADY_IMPORT package with manifest.json</label><label><input type="checkbox" id="detailReport"> Include detailed file-move report</label></div><button id="scanBtn">Scan ZIP</button><button id="downloadBtn" disabled>Download Sorted ZIP</button><button id="resetBtn" class="secondary">Reset</button><div id="status" class="small"></div></div>
-<div class="card"><div class="stats"><div class="stat"><div id="sTotal" class="num">0</div><div>Total files</div></div><div class="stat"><div id="sPdf" class="num">0</div><div>PDFs used</div></div><div class="stat"><div id="sPackets" class="num">0</div><div>Teacher packets</div></div><div class="stat"><div id="sUnknown" class="num">0</div><div>Unknown</div></div><div class="stat"><div id="sExcluded" class="num">0</div><div>Excluded</div></div><div class="stat"><div id="sManifest" class="num">0</div><div>Manifest items</div></div></div></div>
-<div class="card"><h2>Report</h2><div id="report" class="report">No ZIP scanned yet.</div></div>
-<div class="card"><h2>V9.2 TabReady Output Shape</h2><pre>TABREADY_IMPORT/
-  manifest.json
-  curriculum/
-    2026_Q2/
-      adult-csb/session-01-teacher-packet.pdf
-      senior-adult-csb/session-01-teacher-packet.pdf
-      spanish/session-01-teacher-packet.pdf</pre><span class="pill">Quarter map</span><span class="pill">Teacher packets</span><span class="pill">TabReady manifest</span><span class="pill">Safe file copying</span></div>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h1>Tab Curriculum ZIP Sorter — V10</h1>
+    <p>Teacher-first output: audience first, then readable week/date folders. TabReady import files are still generated behind the scenes.</p>
+    <span class="badge">Human Mode Default</span><span class="badge">Audience → Week</span><span class="badge">Teacher + Student Packets</span><span class="badge">TabReady Import</span>
+  </div>
+
+  <div class="card">
+    <h2>Quarter Setup</h2>
+    <div class="grid">
+      <div>
+        <label>Quarter mode</label>
+        <select id="quarterMode">
+          <option value="spring2026">Spring 2026 built-in map</option>
+          <option value="custom">Custom map</option>
+        </select>
+      </div>
+      <div>
+        <label>Quarter ID for TabReady</label>
+        <input id="quarterId" type="text" value="2026_Q2"/>
+      </div>
+      <div>
+        <label>Display title</label>
+        <input id="displayTitle" type="text" value="Spring 2026 Sunday School"/>
+      </div>
+      <div>
+        <label>Event tag</label>
+        <input id="eventTag" type="text" value="curriculum_2026_Q2"/>
+      </div>
+    </div>
+    <h3>Custom lesson map</h3>
+    <p class="small">Format: <b>YYYY-MM-DD | Unit Name | Session Number | Lesson Title</b>. Paste Summer here when available.</p>
+    <textarea id="customMap">2026-06-07 | Unit 1 - Example | 1 | Lesson Title</textarea>
+  </div>
+
+  <div class="card">
+    <h2>1. Upload Curriculum ZIP</h2>
+    <div id="drop" class="drop">
+      <p><b>Drag ZIP file here</b><br/>or use the file picker below</p>
+      <input id="fileInput" type="file" accept=".zip,application/zip"/>
+      <p id="fileName" class="small">No file chosen</p>
+    </div>
+    <div class="checks">
+      <label><input id="excludeKjv" type="checkbox" checked> Exclude KJV / KJ / King James files</label>
+      <label><input id="skipJunk" type="checkbox" checked> Skip Mac junk files</label>
+      <label><input id="preserveNonPdf" type="checkbox" checked> Preserve useful non-PDF support files separately</label>
+      <label><input id="makeTeacher" type="checkbox" checked> Create 01 - Teacher Packet.pdf from existing PDFs</label>
+      <label><input id="makeStudent" type="checkbox" checked> Create 02 - Student Packet.pdf when student/reader material is found; otherwise duplicate teacher packet</label>
+      <label><input id="makeTabReady" type="checkbox" checked> Create TABREADY_IMPORT package with manifest.json</label>
+      <label><input id="detailReport" type="checkbox"> Include detailed file-move report</label>
+    </div>
+    <button class="primary" id="scanBtn">Scan ZIP</button>
+    <button class="secondary" id="downloadBtn" disabled>Download Sorted ZIP</button>
+    <button class="secondary" id="resetBtn">Reset</button>
+    <div id="status" class="small">Ready.</div>
+    <div class="stats">
+      <div class="stat"><b id="total">0</b>Total files</div>
+      <div class="stat"><b id="pdfs">0</b>PDFs used</div>
+      <div class="stat"><b id="teachers">0</b>Teacher packets</div>
+      <div class="stat"><b id="students">0</b>Student packets</div>
+      <div class="stat"><b id="unknown">0</b>Unknown</div>
+      <div class="stat"><b id="manifestCount">0</b>Manifest items</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>V10 Output Shape</h2>
+    <pre>Adult CSB/
+  Week 01 - Mar 01 - God Is Holy/
+    01 - Teacher Packet.pdf
+    02 - Student Packet.pdf
+    03 - Extras/
+
+Senior Adult CSB/
+  Week 01 - Mar 01 - God Is Holy/
+    01 - Teacher Packet.pdf
+    02 - Student Packet.pdf
+
+Spanish/
+  Week 01 - Mar 01 - God Is Holy/
+    01 - Teacher Packet.pdf
+    02 - Student Packet.pdf
+
+00 - Quarter Overview/
+TABREADY_IMPORT/</pre>
+    <div class="note">V10 intentionally stops exposing publisher folders like Unit → Leader Guide → Leader Pack in the human view. Those details are folded into easy week folders.</div>
+  </div>
+
+  <div class="card">
+    <h2>Report</h2>
+    <pre id="report">No ZIP scanned yet.</pre>
+  </div>
 </div>
+
 <script>
-const springMap=[
- {date:'2026-03-01',unit:'Unit 1 - God Is',session:1,title:'God Is Holy'},
- {date:'2026-03-08',unit:'Unit 1 - God Is',session:2,title:'God Is Just'},
- {date:'2026-03-15',unit:'Unit 1 - God Is',session:3,title:'God Is Not Impressed'},
- {date:'2026-03-22',unit:'Unit 1 - God Is',session:4,title:'God Is Faithful'},
- {date:'2026-03-29',unit:'Unit 1 - God Is',session:5,title:'God Is Faithful'},
- {date:'2026-04-05',unit:'Unit 1 - God Is',session:6,title:'God Is Life-Giving'},
- {date:'2026-04-12',unit:'Unit 1 - God Is',session:7,title:'God Is Eternal'},
- {date:'2026-04-19',unit:'Unit 2 - Seize the Day',session:1,title:'A Mission Full of Opportunities'},
- {date:'2026-04-26',unit:'Unit 2 - Seize the Day',session:2,title:'A Mission with a Message'},
- {date:'2026-05-03',unit:'Unit 2 - Seize the Day',session:3,title:'A Mission Met with Courage'},
- {date:'2026-05-10',unit:'Unit 2 - Seize the Day',session:4,title:'A Mission Soaked in Prayer'},
- {date:'2026-05-17',unit:'Unit 2 - Seize the Day',session:5,title:'A Mission Outside Your Comfort Zone'},
- {date:'2026-05-24',unit:'Unit 2 - Seize the Day',session:6,title:'A Mission Without Boundaries'},
- {date:'2026-05-31',unit:'Special Focus - Don\'t Forget to Remember',session:1,title:'Don\'t Forget to Remember'}
+let selectedFile = null;
+let outputZip = null;
+let outputName = 'tab-curriculum-v10-output.zip';
+
+const SPRING_2026 = [
+  {date:'2026-03-01', unit:'Unit 1 - God Is', session:1, title:'God Is Holy'},
+  {date:'2026-03-08', unit:'Unit 1 - God Is', session:2, title:'God Is Just'},
+  {date:'2026-03-15', unit:'Unit 1 - God Is', session:3, title:'God Is Not Impressed'},
+  {date:'2026-03-22', unit:'Unit 1 - God Is', session:4, title:'God Is Faithful'},
+  {date:'2026-03-29', unit:'Unit 1 - God Is', session:5, title:'God Is Faithful'},
+  {date:'2026-04-05', unit:'Unit 1 - God Is', session:6, title:'God Is Life-Giving'},
+  {date:'2026-04-12', unit:'Unit 1 - God Is', session:7, title:'God Is Eternal'},
+  {date:'2026-04-19', unit:'Unit 2 - Seize the Day', session:1, title:'A Mission Full of Opportunities'},
+  {date:'2026-04-26', unit:'Unit 2 - Seize the Day', session:2, title:'A Mission with a Message'},
+  {date:'2026-05-03', unit:'Unit 2 - Seize the Day', session:3, title:'A Mission Met with Courage'},
+  {date:'2026-05-10', unit:'Unit 2 - Seize the Day', session:4, title:'A Mission Soaked in Prayer'},
+  {date:'2026-05-17', unit:'Unit 2 - Seize the Day', session:5, title:'A Mission Outside Your Comfort Zone'},
+  {date:'2026-05-24', unit:'Unit 2 - Seize the Day', session:6, title:'A Mission Without Boundaries'},
+  {date:'2026-05-31', unit:"Special Focus - Don't Forget to Remember", session:1, title:"Don't Forget to Remember"}
 ];
-let selectedFile=null, outputZip=null;
-const $=id=>document.getElementById(id);
-function slug(s){return String(s||'').toLowerCase().replace(/&/g,'and').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'item'}
-function cleanName(s){return String(s||'').replace(/[\\/:*?"<>|]/g,'-').replace(/\s+/g,' ').trim()}
-function pad(n){return String(n).padStart(2,'0')}
-function isJunk(path){const p=path.split('/').pop(); return path.includes('__MACOSX/')||p==='.DS_Store'||p.startsWith('._')||p===''}
-function isKJV(path){return /\b(kjv|king james)\b/i.test(path)||/\bKJ\b/.test(path)}
-function isPdf(path){return /\.pdf$/i.test(path)}
-function isDoc(path){return /\.(doc|docx)$/i.test(path)}
-function ext(path){const m=path.match(/\.([^.]+)$/);return m?m[1].toLowerCase():''}
-function parseMap(){ if($('quarterMode').value==='spring2026')return springMap; const rows=$('customMap').value.split('\n').map(x=>x.trim()).filter(Boolean); const out=[]; for(const row of rows){const parts=row.split('|').map(x=>x.trim()); if(parts.length>=4)out.push({date:parts[0],unit:parts[1],session:parseInt(parts[2],10),title:parts.slice(3).join(' | ')});} return out.length?out:springMap; }
-function inferUnit(path){const l=path.toLowerCase(); if(l.includes('u2')||l.includes('seize'))return 'Unit 2 - Seize the Day'; if(l.includes('u3')||l.includes('special focus')||l.includes("don't forget"))return "Special Focus - Don't Forget to Remember"; return 'Unit 1 - God Is';}
-function inferSession(path){const m=path.match(/session\s*(\d+)/i); if(m)return parseInt(m[1],10); if(/special focus/i.test(path))return 1; return 0;}
-function lessonFor(path,map){const unit=inferUnit(path), s=inferSession(path); return map.find(x=>x.unit===unit&&x.session===s)||{date:'0000-00-00',unit,session:s||0,title:'Unknown Lesson'};}
-function audience(path){const l=path.toLowerCase(); if(l.includes('spanish')||l.includes('espanol')||l.includes('español'))return {folder:'Spanish',slug:'spanish',role:['ss_spanish','ss_adult'],lang:'es'}; if(l.includes('senior adult'))return {folder:'Senior Adult CSB',slug:'senior-adult-csb',role:['ss_senior_adult','ss_adult'],lang:'en'}; return {folder:'Adult CSB',slug:'adult-csb',role:['ss_adult'],lang:'en'};}
-function roleType(path){const l=path.toLowerCase(); if(l.includes('leader guide'))return 'Leader Guide'; if(l.includes('leader pack')||l.includes('pack item')||l.includes('banner')||l.includes('social media')||l.includes('schedule'))return 'Leader Pack'; if(l.includes('daily discipleship'))return 'Other Resources'; if(l.includes('personal study')||l.includes('psg'))return 'Personal Study Guide'; return 'Other Resources';}
-function sortWeight(path){const r=roleType(path); return {'Leader Guide':1,'Personal Study Guide':2,'Other Resources':3,'Leader Pack':4}[r]||9;}
-function setStats(st){$('sTotal').textContent=st.total;$('sPdf').textContent=st.pdf;$('sPackets').textContent=st.packets;$('sUnknown').textContent=st.unknown;$('sExcluded').textContent=st.excluded;$('sManifest').textContent=st.manifest;}
-async function addZipFile(out,path,fileObj){ const data=await fileObj.async('blob'); out.file(path,data); }
-async function mergePdfs(files){ const { PDFDocument }=PDFLib; const merged=await PDFDocument.create(); files.sort((a,b)=>sortWeight(a.path)-sortWeight(b.path)||a.path.localeCompare(b.path)); for(const f of files){try{const bytes=await f.obj.async('arraybuffer'); const src=await PDFDocument.load(bytes,{ignoreEncryption:true}); const pages=await merged.copyPages(src,src.getPageIndices()); pages.forEach(p=>merged.addPage(p));}catch(e){console.warn('PDF merge skipped',f.path,e)}} return await merged.save(); }
-async function processZip(){
- const f=selectedFile||$('fileInput').files[0]; if(!f){alert('Choose a ZIP first.');return;} selectedFile=f; outputZip=new JSZip(); const inZip=await JSZip.loadAsync(f); const map=parseMap();
- const opts={exclude:$('excludeKjv').checked,skip:$('skipJunk').checked,preserve:$('preserveNonPdf').checked,packets:$('createPackets').checked,tabready:$('createTabReady').checked,detail:$('detailReport').checked};
- const qid=$('quarterId').value.trim()||'2026_Q2', eventTag=$('eventTag').value.trim()||'curriculum_2026_Q2', display=$('displayTitle').value.trim()||'Curriculum';
- const st={total:0,pdf:0,packets:0,unknown:0,excluded:0,junk:0,nonpdf:0,manifest:0}; const report=[]; const grouped={}; const manifest={quarter_id:qid,event_tag:eventTag,display_title:display,source:'tab-curriculum-sorter-v9.2',generated_at:new Date().toISOString(),sessions:[]};
- for(const [path,obj] of Object.entries(inZip.files)){ if(obj.dir)continue; st.total++; if(opts.skip&&isJunk(path)){st.junk++;continue;} if(opts.exclude&&isKJV(path)){st.excluded++; await addZipFile(outputZip,`Excluded - Not Used at Tab/KJV or KJ Files - Review/${cleanName(path.split('/').pop())}`,obj); if(opts.detail)report.push(`${path} --> Excluded - Not Used at Tab`); continue;} if(isPdf(path)){ const lesson=lessonFor(path,map), aud=audience(path), r=roleType(path); const lessonFolder=`${lesson.date} - Session ${pad(lesson.session)} - ${cleanName(lesson.title)}`; const sortedPath=`${aud.folder}/${cleanName(lesson.unit)}/${lessonFolder}/${r}/${cleanName(path.split('/').pop())}`; await addZipFile(outputZip,sortedPath,obj); st.pdf++; const key=`${aud.slug}|${lesson.unit}|${lesson.date}|${lesson.session}|${lesson.title}`; if(!grouped[key])grouped[key]={aud,lesson,files:[]}; grouped[key].files.push({path,obj}); if(opts.detail)report.push(`${path} --> ${sortedPath}`); } else { if(opts.preserve){st.nonpdf++; await addZipFile(outputZip,`Useful Non-PDF Files/${cleanName(path.replaceAll('/','-'))}`,obj); if(opts.detail)report.push(`${path} --> Useful Non-PDF Files`);} }
- }
- if(opts.packets){ for(const g of Object.values(grouped)){ if(!g.files.length)continue; const bytes=await mergePdfs(g.files); const folder=`${g.aud.folder}/${cleanName(g.lesson.unit)}/${g.lesson.date} - Session ${pad(g.lesson.session)} - ${cleanName(g.lesson.title)}`; outputZip.file(`${folder}/Teacher Packet.pdf`,bytes); st.packets++; if(opts.tabready){ const packetPath=`TABREADY_IMPORT/curriculum/${qid}/${g.aud.slug}/session-${pad(g.lesson.session)}-${slug(g.lesson.title)}-teacher-packet.pdf`; outputZip.file(packetPath,bytes); manifest.sessions.push({id:`${qid}_${g.aud.slug}_s${pad(g.lesson.session)}_${slug(g.lesson.title)}`,quarter_id:qid,event_tag:eventTag,title:`${g.lesson.date} - ${g.lesson.title}`,audience:g.aud.folder,audience_slug:g.aud.slug,role_tags:g.aud.role,language:g.aud.lang,unit:g.lesson.unit,session_number:g.lesson.session,lesson_title:g.lesson.title,date:g.lesson.date,file_role:'teacher',r2_key:`curriculum/${qid}/${g.aud.slug}/session-${pad(g.lesson.session)}-${slug(g.lesson.title)}-teacher-packet.pdf`,filename:`${g.aud.folder} - ${g.lesson.date} - ${g.lesson.title} - Teacher Packet.pdf`}); st.manifest++; } } }
- if(opts.tabready){ outputZip.file('TABREADY_IMPORT/manifest.json',JSON.stringify(manifest,null,2)); }
- const clean=`TAB CURRICULUM ZIP SORTER — V9.2 REPORT\nOriginal ZIP: ${f.name}\n\nSUMMARY:\nTotal files scanned: ${st.total}\nPDF files used in sorted output: ${st.pdf}\nTeacher Packet PDFs created: ${st.packets}\nUnknown review files: ${st.unknown}\nExcluded / not used at Tab: ${st.excluded}\nSkipped junk/non-selected files: ${st.junk}\nUseful non-PDF preserved: ${st.nonpdf}\nTabReady manifest items: ${st.manifest}\nLesson map entries: ${map.length}\n\nNOTES:\n- V9.2 fixes the excluded/non-PDF file-copy error from V9.1.\n- Adult CSB, Senior Adult CSB, and Spanish are separated.\n- Teacher Packet.pdf files are merged from existing PDFs only.\n- TABREADY_IMPORT/manifest.json is generated when selected.\n${opts.detail?'\nDETAILED FILE MOVES:\n'+report.join('\n'):''}`;
- outputZip.file('_SORTING REPORT.txt',clean); $('report').textContent=clean; setStats(st); $('downloadBtn').disabled=false; $('status').textContent='Scan complete.';
+
+function $(id){ return document.getElementById(id); }
+function setStatus(msg){ $('status').textContent = msg; }
+function escName(s){ return (s||'').replace(/[\\/:*?"<>|]+/g,'-').replace(/\s+/g,' ').trim(); }
+function slug(s){ return escName(s).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); }
+function pad(n){ return String(n).padStart(2,'0'); }
+function dateLabel(iso){
+  const [y,m,d] = iso.split('-').map(Number);
+  const date = new Date(Date.UTC(y,m-1,d));
+  return date.toLocaleDateString('en-US',{timeZone:'UTC', month:'short', day:'2-digit'}).replace(',', '');
 }
-async function download(){ if(!outputZip)return; const blob=await outputZip.generateAsync({type:'blob'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`tabready-curriculum-${($('quarterId').value||'quarter').replace(/[^a-zA-Z0-9_-]/g,'-')}.zip`; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000); }
-$('scanBtn').onclick=async()=>{try{$('status').textContent='Scanning...';await processZip();}catch(e){console.error(e);$('status').textContent='Scan failed. See report for error.';$('report').textContent='ERROR:\n'+(e&&e.stack?e.stack:e);}};
-$('downloadBtn').onclick=download; $('resetBtn').onclick=()=>location.reload(); $('fileInput').onchange=e=>{selectedFile=e.target.files[0];}; const drop=$('drop'); ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('drag')})); ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('drag')})); drop.addEventListener('drop',e=>{selectedFile=e.dataTransfer.files[0]; $('fileInput').files=e.dataTransfer.files;});
-</script></body></html>
+function weekFolder(item, index){
+  return `Week ${pad(index+1)} - ${dateLabel(item.date)} - ${escName(item.title)}`;
+}
+function isMacJunk(path){
+  const parts = path.split('/');
+  const base = parts[parts.length-1];
+  return path.includes('__MACOSX/') || base === '.DS_Store' || base.startsWith('._') || base === '';
+}
+function isKjv(path){
+  const x = path.toLowerCase();
+  return /\bkjv\b/.test(x) || /\bking james\b/.test(x) || /(^|[\s_\-])kj([\s_\-]|$)/.test(x);
+}
+function audienceOf(path){
+  const x = path.toLowerCase();
+  if (x.includes('spanish') || x.includes('espanol') || x.includes('español')) return {key:'spanish', label:'Spanish', roleTags:['ss_adult','spanish']};
+  if (x.includes('senior adult') || x.includes('senior')) return {key:'senior-adult-csb', label:'Senior Adult CSB', roleTags:['ss_adult']};
+  return {key:'adult-csb', label:'Adult CSB', roleTags:['ss_adult']};
+}
+function resourceType(path){
+  const x = path.toLowerCase();
+  if (x.includes('teacher packet')) return 'teacherPacket';
+  if (x.includes('leader guide')) return 'leaderGuide';
+  if (x.includes('daily discipleship') || x.includes('learner') || x.includes('student') || x.includes('personal study') || x.includes('psg')) return 'student';
+  if (x.includes('leader pack') || x.includes('pack item') || x.includes('banner') || x.includes('schedule')) return 'resource';
+  return 'resource';
+}
+function parseMap(){
+  if ($('quarterMode').value === 'spring2026') return SPRING_2026;
+  const lines = $('customMap').value.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+  const arr = [];
+  for (const line of lines){
+    const parts = line.split('|').map(p=>p.trim());
+    if (parts.length >= 4) {
+      arr.push({date:parts[0], unit:parts[1], session:Number(parts[2]), title:parts.slice(3).join(' | ')});
+    }
+  }
+  return arr.length ? arr : SPRING_2026;
+}
+function unitFromPath(path){
+  const x = path.toLowerCase();
+  if (x.includes('u2') || x.includes('seize the day')) return 'Unit 2 - Seize the Day';
+  if (x.includes('u3') || x.includes('special focus') || x.includes("don't forget")) return "Special Focus - Don't Forget to Remember";
+  if (x.includes('u1') || x.includes('god is')) return 'Unit 1 - God Is';
+  return '';
+}
+function sessionFromPath(path){
+  const x = path.toLowerCase();
+  let m = x.match(/session[\s_\-]*(\d{1,2})/);
+  if (m) return Number(m[1]);
+  m = x.match(/s(\d{1,2})/);
+  if (m) return Number(m[1]);
+  return null;
+}
+function lessonFor(path, map){
+  // If already V9 output with ISO date folder, use date.
+  let mDate = path.match(/(20\d{2}-\d{2}-\d{2})/);
+  if (mDate) {
+    const item = map.find(i=>i.date === mDate[1]);
+    if (item) return {item, index:map.indexOf(item)};
+  }
+  const unit = unitFromPath(path);
+  const sess = sessionFromPath(path);
+  if (unit && sess != null) {
+    let item = map.find(i => i.session === sess && i.unit.toLowerCase().includes(unit.toLowerCase().replace(/^unit \d+ - /,'').split(' - ')[0]));
+    if (!item) {
+      // softer compare
+      item = map.find(i => i.session === sess && unit.toLowerCase().includes(i.unit.toLowerCase().split(' - ')[0]));
+    }
+    if (item) return {item, index:map.indexOf(item)};
+  }
+  return null;
+}
+function overviewCandidate(path){
+  const x = path.toLowerCase();
+  return (x.includes('overview') || x.includes('scope') || x.includes('sequence') || x.includes('contents') || x.includes('table') || x.includes('preview') || x.includes('schedule') || x.includes('calendar'));
+}
+async function mergePdfs(entries){
+  const { PDFDocument } = PDFLib;
+  const out = await PDFDocument.create();
+  for (const entry of entries) {
+    try {
+      const bytes = await entry.file.async('arraybuffer');
+      const src = await PDFDocument.load(bytes, {ignoreEncryption:true});
+      const pages = await out.copyPages(src, src.getPageIndices());
+      pages.forEach(p => out.addPage(p));
+    } catch (e) {
+      console.warn('PDF merge skipped', entry.path, e);
+    }
+  }
+  if (out.getPageCount() === 0) return null;
+  return await out.save();
+}
+function sortEntriesForPacket(a,b){
+  const order = {teacherPacket:0, leaderGuide:1, student:2, resource:3};
+  const ra = order[a.type] ?? 9, rb = order[b.type] ?? 9;
+  if (ra !== rb) return ra-rb;
+  return a.path.localeCompare(b.path);
+}
+function updateStats(stats){
+  $('total').textContent = stats.total;
+  $('pdfs').textContent = stats.pdfsUsed;
+  $('teachers').textContent = stats.teacherPackets;
+  $('students').textContent = stats.studentPackets;
+  $('unknown').textContent = stats.unknown;
+  $('manifestCount').textContent = stats.manifestItems;
+}
+async function scanZip(){
+  if (!selectedFile) { alert('Choose a ZIP first.'); return; }
+  outputZip = new JSZip();
+  $('downloadBtn').disabled = true;
+  setStatus('Scanning...');
+  const report = [];
+  const stats = {total:0,pdfsUsed:0,teacherPackets:0,studentPackets:0,unknown:0,excluded:0,junk:0,nonPdf:0,manifestItems:0,duplicates:0};
+  const map = parseMap();
+  const sourceZip = await JSZip.loadAsync(selectedFile);
+  const groups = {};
+  const manifest = {
+    version:'v10',
+    quarter_id:$('quarterId').value.trim(),
+    display_title:$('displayTitle').value.trim(),
+    event_tag:$('eventTag').value.trim(),
+    generated_at:new Date().toISOString(),
+    package_shape:'teacher_first',
+    sessions:[]
+  };
+  const detail = $('detailReport').checked;
+
+  const allEntries = [];
+  sourceZip.forEach((path, file) => { if (!file.dir) allEntries.push({path,file}); });
+  stats.total = allEntries.length;
+
+  for (const ent of allEntries) {
+    const path = ent.path;
+    if ($('skipJunk').checked && isMacJunk(path)) { stats.junk++; continue; }
+    if ($('excludeKjv').checked && isKjv(path)) {
+      stats.excluded++;
+      const blob = await ent.file.async('blob');
+      outputZip.file(`Excluded - Not Used at Tab/KJV or KJ Files - Review/${escName(path.replaceAll('/','-'))}`, blob);
+      if (detail) report.push(`${path} --> Excluded - Not Used at Tab/KJV or KJ Files - Review/`);
+      continue;
+    }
+
+    const lower = path.toLowerCase();
+    const isPdf = lower.endsWith('.pdf');
+    const isDocOrAsset = /\.(docx?|jpg|jpeg|png|pptx?|txt)$/i.test(path);
+
+    if (!isPdf) {
+      if ($('preserveNonPdf').checked && isDocOrAsset) {
+        stats.nonPdf++;
+        const blob = await ent.file.async('blob');
+        if (overviewCandidate(path)) {
+          outputZip.file(`00 - Quarter Overview/${escName(path.split('/').pop())}`, blob);
+        } else {
+          outputZip.file(`Useful Non-PDF Archive/${escName(path.replaceAll('/','-'))}`, blob);
+        }
+      }
+      continue;
+    }
+
+    const lesson = lessonFor(path, map);
+    const aud = audienceOf(path);
+    const type = resourceType(path);
+    const overview = overviewCandidate(path);
+
+    if (overview) {
+      const blob = await ent.file.async('blob');
+      outputZip.file(`00 - Quarter Overview/${escName(path.split('/').pop())}`, blob);
+      if (detail) report.push(`${path} --> 00 - Quarter Overview/`);
+      continue;
+    }
+
+    if (!lesson) {
+      stats.unknown++;
+      const blob = await ent.file.async('blob');
+      outputZip.file(`Unknown - Review/${escName(path.replaceAll('/','-'))}`, blob);
+      continue;
+    }
+
+    stats.pdfsUsed++;
+    const key = `${aud.key}|${lesson.index}`;
+    if (!groups[key]) groups[key] = {aud, item:lesson.item, index:lesson.index, entries:[]};
+    groups[key].entries.push({...ent, type});
+  }
+
+  // Build human folders and packets
+  const usedOutputNames = new Set();
+  function safeOut(name){
+    let n = name, i = 2;
+    while (usedOutputNames.has(n)) { n = name.replace(/(\.[^.]+)$/i, ` (${i})$1`); i++; }
+    usedOutputNames.add(n);
+    return n;
+  }
+
+  for (const group of Object.values(groups).sort((a,b)=> a.aud.label.localeCompare(b.aud.label) || a.index-b.index)) {
+    const folder = `${group.aud.label}/${weekFolder(group.item, group.index)}`;
+    const entries = group.entries.sort(sortEntriesForPacket);
+    const teacherEntries = entries.filter(e => ['teacherPacket','leaderGuide','student','resource'].includes(e.type));
+    const studentEntries = entries.filter(e => ['student'].includes(e.type));
+    const extras = entries.filter(e => e.type === 'resource');
+
+    if ($('makeTeacher').checked) {
+      let teacherBytes = null;
+      const prebuilt = teacherEntries.find(e => e.path.toLowerCase().includes('teacher packet'));
+      if (prebuilt) teacherBytes = await prebuilt.file.async('uint8array');
+      else teacherBytes = await mergePdfs(teacherEntries);
+      if (teacherBytes) {
+        outputZip.file(`${folder}/01 - Teacher Packet.pdf`, teacherBytes);
+        stats.teacherPackets++;
+      }
+    }
+
+    if ($('makeStudent').checked) {
+      let studentBytes = null;
+      if (studentEntries.length) studentBytes = await mergePdfs(studentEntries);
+      else studentBytes = await mergePdfs(teacherEntries); // simplicity fallback
+      if (studentBytes) {
+        outputZip.file(`${folder}/02 - Student Packet.pdf`, studentBytes);
+        stats.studentPackets++;
+      }
+    }
+
+    // Preserve individual source PDFs in extras for review, not as primary navigation.
+    let count = 1;
+    for (const e of extras) {
+      const blob = await e.file.async('blob');
+      outputZip.file(`${folder}/03 - Extras/${pad(count)} - ${escName(e.path.split('/').pop())}`, blob);
+      count++;
+    }
+
+    if ($('makeTabReady').checked) {
+      const audSlug = group.aud.key;
+      const fileName = `session-${pad(group.item.session)}-${slug(group.item.title)}-teacher-packet.pdf`;
+      const trPath = `TABREADY_IMPORT/curriculum/${manifest.quarter_id}/${audSlug}/${fileName}`;
+      // Use the generated teacher packet if possible by re-merging/copying from teacher entries.
+      let trBytes = await mergePdfs(teacherEntries);
+      if (trBytes) {
+        outputZip.file(trPath, trBytes);
+        manifest.sessions.push({
+          id:`${manifest.quarter_id}_${audSlug}_s${pad(group.item.session)}_${slug(group.item.title)}`,
+          audience:group.aud.label,
+          audience_slug:audSlug,
+          role_tags:group.aud.roleTags,
+          event_tag:manifest.event_tag,
+          date:group.item.date,
+          week_number:group.index+1,
+          session_number:group.item.session,
+          unit:group.item.unit,
+          title:group.item.title,
+          display_title:weekFolder(group.item, group.index),
+          file_role:'teacher',
+          r2_key:`curriculum/${manifest.quarter_id}/${audSlug}/${fileName}`,
+          package_path:`curriculum/${manifest.quarter_id}/${audSlug}/${fileName}`,
+          content_title:`${group.aud.label} - ${weekFolder(group.item, group.index)}`,
+          content_body:`${group.aud.label} curriculum packet for ${weekFolder(group.item, group.index)}.`
+        });
+        stats.manifestItems++;
+      }
+    }
+
+    if (detail) {
+      report.push(`${group.aud.label} / ${weekFolder(group.item, group.index)} --> ${entries.length} source PDF(s), teacher/student packets generated`);
+    }
+  }
+
+  if ($('makeTabReady').checked) {
+    outputZip.file('TABREADY_IMPORT/manifest.json', JSON.stringify(manifest, null, 2));
+  }
+
+  const summary = [
+    'TAB CURRICULUM ZIP SORTER — V10 REPORT',
+    `Original ZIP: ${selectedFile.name}`,
+    '',
+    'SUMMARY:',
+    `Total files scanned: ${stats.total}`,
+    `PDF files used in human output: ${stats.pdfsUsed}`,
+    `Teacher Packet PDFs created: ${stats.teacherPackets}`,
+    `Student Packet PDFs created: ${stats.studentPackets}`,
+    `Unknown review files: ${stats.unknown}`,
+    `Excluded / not used at Tab: ${stats.excluded}`,
+    `Skipped junk/non-selected files: ${stats.junk}`,
+    `Useful non-PDF preserved: ${stats.nonPdf}`,
+    `TabReady manifest items: ${stats.manifestItems}`,
+    `Lesson map entries: ${map.length}`,
+    '',
+    'NOTES:',
+    '- V10 uses teacher-first Human Mode: Audience → Week/date/lesson → packets.',
+    '- Publisher folders like Unit / Leader Guide / Leader Pack are not exposed as primary navigation.',
+    '- Units remain in metadata and TabReady manifest.',
+    '- Student Packet is built from student/reader files when available; otherwise it duplicates the teacher packet for easy access.',
+    '- Quarter overview candidates are elevated to 00 - Quarter Overview.',
+    '',
+    detail ? 'DETAILED GROUPS:' : 'Detailed file moves were not included. Turn on “Include detailed file-move report” if needed.',
+    ...(detail ? report : [])
+  ].join('\n');
+
+  outputZip.file('_SORTING REPORT.txt', summary);
+  $('report').textContent = summary;
+  updateStats(stats);
+  outputName = `${slug($('displayTitle').value || 'tab-curriculum')}-v10.zip`;
+  $('downloadBtn').disabled = false;
+  setStatus('Scan complete.');
+}
+
+async function downloadZip(){
+  if (!outputZip) return;
+  setStatus('Building download...');
+  const blob = await outputZip.generateAsync({type:'blob'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = outputName;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setStatus('Download ready.');
+}
+
+function resetAll(){
+  selectedFile = null; outputZip = null;
+  $('fileInput').value = '';
+  $('fileName').textContent = 'No file chosen';
+  $('downloadBtn').disabled = true;
+  $('report').textContent = 'No ZIP scanned yet.';
+  updateStats({total:0,pdfsUsed:0,teacherPackets:0,studentPackets:0,unknown:0,manifestItems:0});
+  setStatus('Ready.');
+}
+
+$('fileInput').addEventListener('change', e => {
+  selectedFile = e.target.files[0] || null;
+  $('fileName').textContent = selectedFile ? selectedFile.name : 'No file chosen';
+});
+const drop = $('drop');
+drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('drag'); });
+drop.addEventListener('dragleave', () => drop.classList.remove('drag'));
+drop.addEventListener('drop', e => {
+  e.preventDefault(); drop.classList.remove('drag');
+  selectedFile = e.dataTransfer.files[0] || null;
+  $('fileName').textContent = selectedFile ? selectedFile.name : 'No file chosen';
+});
+$('scanBtn').addEventListener('click', () => scanZip().catch(err => {
+  console.error(err);
+  $('report').textContent = 'ERROR:\n' + (err && err.stack ? err.stack : err);
+  setStatus('Scan failed. See report for error.');
+}));
+$('downloadBtn').addEventListener('click', downloadZip);
+$('resetBtn').addEventListener('click', resetAll);
+</script>
+</body>
+</html>
