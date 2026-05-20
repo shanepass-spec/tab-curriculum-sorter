@@ -1,15 +1,31 @@
-# Tab Curriculum ZIP Sorter — V9.2
+# Tab Curriculum ZIP Sorter — V10
 
-Stable V8 sorter plus TabReady import package generation.
+Teacher-first curriculum sorter.
 
-## V9.2 Fix
+## V10 purpose
 
-V9.1 failed when excluded or non-PDF files were copied into the output ZIP. This version reads those files as Blobs before adding them to the generated ZIP.
+Publisher structure IN → Teacher structure OUT.
 
-## Output
+Human output:
+- Adult CSB
+- Senior Adult CSB
+- Spanish
+- 00 - Quarter Overview
+- Week folders named like `Week 01 - Mar 01 - God Is Holy`
+- `01 - Teacher Packet.pdf`
+- `02 - Student Packet.pdf`
+- `03 - Extras`
 
-- Sorted curriculum folders
-- Teacher Packet.pdf files
-- TABREADY_IMPORT/manifest.json
-- TABREADY_IMPORT/curriculum/{quarter_id}/{audience}/session PDFs
-- Clean report by default
+Automation output:
+- `TABREADY_IMPORT/manifest.json`
+- `TABREADY_IMPORT/curriculum/<quarter_id>/<audience>/...`
+
+## Notes
+
+V10 intentionally hides publisher-style folders from the human output:
+- Unit
+- Leader Guide
+- Leader Pack
+- Other Resources
+
+Those remain metadata or source material, but not primary teacher navigation.
