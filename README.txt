@@ -1,31 +1,29 @@
-# Tab Curriculum ZIP Sorter — V10
+# Tab Curriculum ZIP Sorter — V10.1
 
-Teacher-first curriculum sorter.
+Teacher-first curriculum sorter for Tabernacle Sunday School curriculum.
 
-## V10 purpose
+## V10.1 focus
 
-Publisher structure IN → Teacher structure OUT.
+- Detects the quarter master file: `Leader Pack Schedule`, `Schedule of Studies`, scope/sequence files.
+- Copies that schedule to `00 - START HERE - Quarter Overview`.
+- Inserts the schedule page at the front of every generated Teacher Packet, Learner Guide, and monthly bundle.
+- Produces shallow upload lanes:
+  - `01 - UPLOAD TO PLANNING CENTER`
+  - `02 - UPLOAD TO TABREADY`
+  - `03 - OPTIONAL MONTHLY BUNDLES`
+  - `04 - DO NOT UPLOAD - Archive and Extras`
+  - `05 - DO NOT USE AT TAB`
+- Uses sortable filenames such as:
+  - `01 - JUN 07 - Meeting Needs - Adult CSB - Teacher Packet.pdf`
+  - `01 - JUN 07 - Meeting Needs - Adult CSB - Learner Guide.pdf`
+- Generates `TABREADY_IMPORT/manifest.json` where each `file_path` matches its `r2_key`.
 
-Human output:
-- Adult CSB
-- Senior Adult CSB
-- Spanish
-- 00 - Quarter Overview
-- Week folders named like `Week 01 - Mar 01 - God Is Holy`
-- `01 - Teacher Packet.pdf`
-- `02 - Student Packet.pdf`
-- `03 - Extras`
+## Deploy
 
-Automation output:
-- `TABREADY_IMPORT/manifest.json`
-- `TABREADY_IMPORT/curriculum/<quarter_id>/<audience>/...`
+Replace these files in GitHub:
 
-## Notes
+- `public/index.html`
+- `README.md`
+- `wrangler.jsonc`
 
-V10 intentionally hides publisher-style folders from the human output:
-- Unit
-- Leader Guide
-- Leader Pack
-- Other Resources
-
-Those remain metadata or source material, but not primary teacher navigation.
+Then let Cloudflare redeploy.
