@@ -1,29 +1,17 @@
-# Tab Curriculum ZIP Sorter — V10.1
+# Tab Curriculum ZIP Sorter — V10.2
 
-Teacher-first curriculum sorter for Tabernacle Sunday School curriculum.
+Teacher-first curriculum sorter for Tabernacle Sunday School.
 
-## V10.1 focus
+## V10.2 focus
 
-- Detects the quarter master file: `Leader Pack Schedule`, `Schedule of Studies`, scope/sequence files.
-- Copies that schedule to `00 - START HERE - Quarter Overview`.
-- Inserts the schedule page at the front of every generated Teacher Packet, Learner Guide, and monthly bundle.
-- Produces shallow upload lanes:
-  - `01 - UPLOAD TO PLANNING CENTER`
-  - `02 - UPLOAD TO TABREADY`
-  - `03 - OPTIONAL MONTHLY BUNDLES`
-  - `04 - DO NOT UPLOAD - Archive and Extras`
-  - `05 - DO NOT USE AT TAB`
-- Uses sortable filenames such as:
-  - `01 - JUN 07 - Meeting Needs - Adult CSB - Teacher Packet.pdf`
-  - `01 - JUN 07 - Meeting Needs - Adult CSB - Learner Guide.pdf`
-- Generates `TABREADY_IMPORT/manifest.json` where each `file_path` matches its `r2_key`.
+- No fixed quarter dates are pre-populated in the UI.
+- The sorter finds `Leader Pack Schedule` / `Schedule of Studies` first.
+- When possible, it builds the active lesson map from that schedule.
+- If the schedule cannot be parsed, it uses an explicit fallback or requires a pasted custom map.
+- Output uses `Learner Guide`, not `Student Packet`.
+- Output creates action folders: upload to Planning Center, upload to TabReady, optional bundles, archive, and do-not-use files.
+- TabReady manifest paths use exact `r2_key` values for per-file upload later.
 
-## Deploy
+## Update file
 
-Replace these files in GitHub:
-
-- `public/index.html`
-- `README.md`
-- `wrangler.jsonc`
-
-Then let Cloudflare redeploy.
+The primary file is `public/index.html`.
