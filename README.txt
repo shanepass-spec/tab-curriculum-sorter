@@ -1,2 +1,1 @@
-Tab Curriculum ZIP Sorter V10.9
-Output is simplified into one READY TO SEND OR UPLOAD folder with separate Adult/Senior leader and learner folders.
+Tab Curriculum ZIP Sorter V11.0 - learner fallback uses Teacher Packet automatically; missing notices only appear when no usable packet can be created.
