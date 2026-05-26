@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Tab Curriculum ZIP Sorter — V10.9</title>
+  <title>Tab Curriculum ZIP Sorter — V11.0</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
   <style>
@@ -13,9 +13,9 @@
 <body>
 <div class="wrap">
   <section class="hero">
-    <h1>Tab Curriculum ZIP Sorter — V10.9</h1>
+    <h1>Tab Curriculum ZIP Sorter — V11.0</h1>
     <p class="sub">Map-first sorter: finds the Leader Pack Schedule / Schedule of Studies first, builds the lesson map from it when possible, then creates upload-ready clear Adult/Senior Adult leader and learner folders.</p>
-    <div><span class="pill">No prefilled dates</span><span class="pill">Schedule DOC wins</span><span class="pill">PDFelement conversion folder</span><span class="pill">Learner Guide language</span><span class="pill">Sortable filenames</span><span class="pill">One upload folder</span><span class="pill">TabReady manifest</span></div>
+    <div><span class="pill">No prefilled dates</span><span class="pill">Schedule DOC wins</span><span class="pill">PDFelement conversion folder</span><span class="pill">Learner Guide language</span><span class="pill">Sortable filenames</span><span class="pill">One ready folder</span><span class="pill">Teacher copy allowed for Learner Guide</span><span class="pill">TabReady manifest</span></div>
   </section>
 
   <section class="grid">
@@ -303,7 +303,7 @@ async function scanZip(){
     if(aud && lesson && (type==='teacher'||type==='learner'||type==='extra')){ const b=bucket(aud,lesson); b[type].push({name:path,bytes,type}); counts.pdfUsed++; if(type==='extra') counts.extras++; if(detailed) report.push(`${path} --> ${aud.label} / ${lesson.label} / ${type}`); }
     else { counts.unknown++; unknown.push(path); out.file(`${root}/04 - DO NOT UPLOAD - Archive and Extras/Unknown - Review/${sanitize(path.replaceAll('/',' - '))}`, bytes); if(detailed) report.push(`${path} --> UNKNOWN REVIEW`); }
   }
-  const manifest={version:'10.9',quarter_id:quarterId,display_title:displayTitle,event_tag:eventTag,lesson_map_source:mapResult.source,overview:{found:!!overview,source_path:overview?overview.path:null},items:[]};
+  const manifest={version:'11.0',quarter_id:quarterId,display_title:displayTitle,event_tag:eventTag,lesson_map_source:mapResult.source,overview:{found:!!overview,source_path:overview?overview.path:null},items:[]};
   const readyRoot=`${root}/01 - READY TO SEND OR UPLOAD`; const tabRoot=`${root}/02 - TABREADY IMPORT DATA/TABREADY_IMPORT`; const bundleRoot=`${root}/03 - OPTIONAL MONTHLY BUNDLES`; const monthly={};
   if(overviewBlob){
     for(const aud of AUDIENCES){
@@ -312,31 +312,33 @@ async function scanZip(){
       out.file(`${readyRoot}/${aud.label}/02 - Learner Guides/00 - START HERE - Schedule of Studies - ${sanitize(displayTitle)}${overviewExt}`, overviewBlob);
     }
   }
+  const generatedTeacher={};
+  const generatedLearner={};
   const sorted=Object.values(buckets).sort((a,b)=>a.aud.key.localeCompare(b.aud.key)||a.lesson.index-b.lesson.index);
   for(const b of sorted){ const aud=b.aud,l=b.lesson,cover=($('insertCover').checked&&overviewBytes)?overviewBytes:null; const teacherItems=[...b.teacher,...b.extra]; const learnerItems=[...b.learner];
     let teacherPacketBytes=null;
-    if($('makePackets').checked && teacherItems.length){ const bytes=await mergePdfs(teacherItems,cover); teacherPacketBytes=bytes; const fn=fileName(l,aud,'Teacher Packet'); out.file(`${readyRoot}/${aud.label}/01 - Leader Packets/${fn}`, bytes); counts.teacherPackets++; addManifest(out,manifest,tabRoot,quarterId,eventTag,aud,l,'teacher',fn,bytes); const mk=`${aud.key}|${l.month}|Teacher`; if(!monthly[mk]) monthly[mk]={aud,month:l.month,kind:'Teacher',items:[]}; monthly[mk].items.push({name:fn,bytes}); }
-    if($('makePackets').checked && learnerItems.length){ const bytes=await mergePdfs(learnerItems,cover); const fn=fileName(l,aud,'Learner Guide'); out.file(`${readyRoot}/${aud.label}/02 - Learner Guides/${fn}`, bytes); counts.learnerGuides++; addManifest(out,manifest,tabRoot,quarterId,eventTag,aud,l,'learner',fn,bytes); const mk=`${aud.key}|${l.month}|Learner`; if(!monthly[mk]) monthly[mk]={aud,month:l.month,kind:'Learner',items:[]}; monthly[mk].items.push({name:fn,bytes}); }
-    else if($('makePackets').checked && teacherPacketBytes){ const fn=fileName(l,aud,'Learner Guide'); out.file(`${readyRoot}/${aud.label}/02 - Learner Guides/${fn}`, teacherPacketBytes); counts.learnerGuides++; counts.fallbackLearner++; addManifest(out,manifest,tabRoot,quarterId,eventTag,aud,l,'learner',fn,teacherPacketBytes); const mk=`${aud.key}|${l.month}|Learner`; if(!monthly[mk]) monthly[mk]={aud,month:l.month,kind:'Learner',items:[]}; monthly[mk].items.push({name:fn,bytes:teacherPacketBytes}); }
+    if($('makePackets').checked && teacherItems.length){ const bytes=await mergePdfs(teacherItems,cover); teacherPacketBytes=bytes; const fn=fileName(l,aud,'Teacher Packet'); out.file(`${readyRoot}/${aud.label}/01 - Leader Packets/${fn}`, bytes); counts.teacherPackets++; generatedTeacher[`${aud.key}|${l.index}`]=true; addManifest(out,manifest,tabRoot,quarterId,eventTag,aud,l,'teacher',fn,bytes); const mk=`${aud.key}|${l.month}|Teacher`; if(!monthly[mk]) monthly[mk]={aud,month:l.month,kind:'Teacher',items:[]}; monthly[mk].items.push({name:fn,bytes}); }
+    if($('makePackets').checked && learnerItems.length){ const bytes=await mergePdfs(learnerItems,cover); const fn=fileName(l,aud,'Learner Guide'); out.file(`${readyRoot}/${aud.label}/02 - Learner Guides/${fn}`, bytes); counts.learnerGuides++; generatedLearner[`${aud.key}|${l.index}`]=true; addManifest(out,manifest,tabRoot,quarterId,eventTag,aud,l,'learner',fn,bytes); const mk=`${aud.key}|${l.month}|Learner`; if(!monthly[mk]) monthly[mk]={aud,month:l.month,kind:'Learner',items:[]}; monthly[mk].items.push({name:fn,bytes}); }
+    else if($('makePackets').checked && teacherPacketBytes){ const fn=fileName(l,aud,'Learner Guide'); out.file(`${readyRoot}/${aud.label}/02 - Learner Guides/${fn}`, teacherPacketBytes); counts.learnerGuides++; counts.fallbackLearner++; generatedLearner[`${aud.key}|${l.index}`]=true; addManifest(out,manifest,tabRoot,quarterId,eventTag,aud,l,'learner',fn,teacherPacketBytes); const mk=`${aud.key}|${l.month}|Learner`; if(!monthly[mk]) monthly[mk]={aud,month:l.month,kind:'Learner',items:[]}; monthly[mk].items.push({name:fn,bytes:teacherPacketBytes}); }
     for(const ex of b.extra){ out.file(`${root}/04 - DO NOT UPLOAD - Archive and Extras/Extras/${aud.label}/${String(l.index).padStart(2,'0')} - ${l.month} ${l.day} - ${sanitize(ex.name.split('/').pop())}`, ex.bytes); }
   }
   // Force every audience folder to show the full quarter and flag missing lessons clearly.
   for(const aud of AUDIENCES){
     for(const l of lessons){
       const b=buckets[`${aud.key}|${l.index}`];
-      if(!b || !b.teacher || !b.teacher.length){
-        addText(out,`${readyRoot}/${aud.label}/01 - Leader Packets/${String(l.index).padStart(2,'0')} - ${l.month} ${l.day} - ${sanitize(l.title)} - MISSING LEADER PDF SOURCE.txt`,`Missing leader/teacher PDF source for ${aud.label}
+      if(!generatedTeacher[`${aud.key}|${l.index}`]){
+        addText(out,`${readyRoot}/${aud.label}/01 - Leader Packets/${String(l.index).padStart(2,'0')} - ${l.month} ${l.day} - ${sanitize(l.title)} - MISSING LEADER PACKET.txt`,`No Leader Packet could be created for ${aud.label}
 ${l.label}
 ${l.title}
 
 Check the original ZIP, converted PDFs, or NEEDS PDF CONVERSION folder.`);
       }
-      if(!b || !b.learner || !b.learner.length){
-        addText(out,`${readyRoot}/${aud.label}/02 - Learner Guides/${String(l.index).padStart(2,'0')} - ${l.month} ${l.day} - ${sanitize(l.title)} - MISSING LEARNER PDF SOURCE.txt`,`Missing true Learner Guide PDF source for ${aud.label}
+      if(!generatedLearner[`${aud.key}|${l.index}`]){
+        addText(out,`${readyRoot}/${aud.label}/02 - Learner Guides/${String(l.index).padStart(2,'0')} - ${l.month} ${l.day} - ${sanitize(l.title)} - MISSING LEARNER GUIDE.txt`,`No Learner Guide could be created for ${aud.label}
 ${l.label}
 ${l.title}
 
-If no learner file exists, decide whether leaders may use the Teacher Packet as the learner copy.`);
+No separate learner PDF was found, and no Teacher Packet was available to copy as the learner version.`);
       }
     }
   }
@@ -357,7 +359,7 @@ function buildSummary(title,lessons,overview,mapSource){ let txt=`${title}\n\nMa
 function buildInstructions(title){ return `START HERE — ${title}\n\n1. Upload Planning Center files from:\n   01 - UPLOAD TO PLANNING CENTER\n\n2. Upload/import TabReady files from:\n   02 - UPLOAD TO TABREADY / TABREADY_IMPORT\n\n3. Optional monthly bundles are in:\n   03 - OPTIONAL MONTHLY BUNDLES\n\n4. Do NOT upload these unless intentionally needed:\n   04 - DO NOT UPLOAD - Archive and Extras\n   05 - DO NOT USE AT TAB\n\n5. Generated files use Learner Guide language and sortable lesson/date prefixes.\n`; }
 function buildMissingReport(lessons,buckets,counts){ const lines=[]; for(const aud of AUDIENCES){ let hasAny=false; for(const l of lessons){ const b=buckets[`${aud.key}|${l.index}`]; if(b){ hasAny=true; if(!b.teacher.length) lines.push(`${aud.label} ${l.label}: missing teacher PDF source files`); if(!b.learner.length && b.teacher.length) lines.push(`${aud.label} ${l.label}: no Learner Guide PDF source found; Learner Guide was copied from Teacher Packet for access`); } } if(!hasAny) lines.push(`${aud.label}: no packet-ready PDF source files found. Check NEEDS PDF CONVERSION folder if source files are Word docs.`); } if(counts && counts.conversion) lines.push(`${counts.conversion} Word/RTF curriculum files were found and moved to 06 - NEEDS PDF CONVERSION BEFORE FINAL UPLOAD.`); return lines; }
 function buildReport(zipName,c,lessons,overview,manifest,details,detailed,mapSource,missing){
-  let txt=`TAB CURRICULUM ZIP SORTER — V10.9 REPORT
+  let txt=`TAB CURRICULUM ZIP SORTER — V11.0 REPORT
 Original ZIP: ${zipName}
 
 SUMMARY:
