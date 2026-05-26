@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Tab Curriculum ZIP Sorter — V10.3</title>
+  <title>Tab Curriculum ZIP Sorter — V10.6</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
   <style>
@@ -13,9 +13,9 @@
 <body>
 <div class="wrap">
   <section class="hero">
-    <h1>Tab Curriculum ZIP Sorter — V10.3</h1>
+    <h1>Tab Curriculum ZIP Sorter — V10.6</h1>
     <p class="sub">Map-first sorter: finds the Leader Pack Schedule / Schedule of Studies first, builds the lesson map from it when possible, then creates upload-ready Teacher Packets and Learner Guides.</p>
-    <div><span class="pill">No prefilled dates</span><span class="pill">Schedule DOC wins</span><span class="pill">Conversion warnings</span><span class="pill">Learner Guide language</span><span class="pill">Sortable filenames</span><span class="pill">TabReady manifest</span></div>
+    <div><span class="pill">No prefilled dates</span><span class="pill">Schedule DOC wins</span><span class="pill">Word-to-PDF helper</span><span class="pill">Learner Guide language</span><span class="pill">Sortable filenames</span><span class="pill">TabReady manifest</span></div>
   </section>
 
   <section class="grid">
@@ -201,6 +201,115 @@ function needsPdfConversion(path){
 function conversionAudienceLabel(path){ const aud=detectAudience(path); return aud?aud.label:'Unsorted'; }
 function conversionPath(root,path){ return `${root}/06 - NEEDS PDF CONVERSION BEFORE FINAL UPLOAD/${conversionAudienceLabel(path)}/${sanitize(path.replaceAll('/',' - '))}`; }
 
+function conversionInstructions(){ return `WORD/DOC CONVERSION REQUIRED — SIMPLE PDFelement WORKFLOW
+
+The sorter found curriculum files that are Word documents (.doc/.docx/.rtf). The browser can sort PDFs, but it cannot safely convert old Word documents into PDFs by itself.
+
+WHAT THIS FOLDER IS FOR:
+These are the files that must be converted before the final package will be complete.
+
+PLAIN STEPS:
+1. Open PDFelement.app.
+2. Drag the Word files from this folder into PDFelement.
+3. Batch convert/save them as PDFs.
+4. Save the PDFs somewhere easy to find.
+5. Add those converted PDFs back into the original curriculum folder or ZIP.
+6. Run the sorter again.
+
+IMPORTANT:
+- Do not upload this folder to Planning Center.
+- Do not import this folder into TabReady.
+- These are missing source files that need to become PDFs first.
+- Keep the original filenames as much as possible so the sorter can recognize Unit + Session and put them in the correct date.
+
+WHY THIS MATTERS:
+If Senior Adult, Adult, or Spanish materials only exist as Word files, they cannot appear in the final PDF packet until they are converted.
+`; }
+function conversionScript(){ return `#!/bin/bash
+set -e
+cd "$(dirname "$0")"
+ROOT="$(pwd)"
+OUT="$ROOT/CONVERTED_PDFS"
+mkdir -p "$OUT"
+
+echo "Tab Curriculum Word-to-PDF helper"
+echo "This converts .doc/.docx/.rtf files inside this folder into PDFs."
+echo "Converted PDFs will be placed in: $OUT"
+echo ""
+
+SOFFICE="/Applications/LibreOffice.app/Contents/MacOS/soffice"
+COUNT=0
+
+convert_with_word() {
+  local inFile="$1"
+  local outFile="$2"
+  /usr/bin/osascript <<OSA
+set inPath to POSIX file "$inFile"
+set outPath to POSIX file "$outFile"
+tell application "Microsoft Word"
+  activate
+  open inPath
+  set docRef to active document
+  save as docRef file name outPath file format format PDF
+  close docRef saving no
+end tell
+OSA
+}
+
+while IFS= read -r -d '' file; do
+  rel="${file#$ROOT/}"
+  base="$(basename "$file")"
+  name="${base%.*}"
+  dir="$(dirname "$rel")"
+  mkdir -p "$OUT/$dir"
+  outFile="$OUT/$dir/$name.pdf"
+  echo "Converting: $rel"
+  if [ -x "$SOFFICE" ]; then
+    "$SOFFICE" --headless --convert-to pdf --outdir "$OUT/$dir" "$file" >/dev/null 2>&1 || true
+    # LibreOffice may write to outdir using original basename.
+    if [ ! -f "$outFile" ]; then
+      found="$(find "$OUT/$dir" -maxdepth 1 -iname "$name.pdf" -print -quit)"
+      [ -n "$found" ] && mv "$found" "$outFile"
+    fi
+  fi
+  if [ ! -f "$outFile" ]; then
+    if osascript -e 'id of application "Microsoft Word"' >/dev/null 2>&1; then
+      convert_with_word "$file" "$outFile" || true
+    fi
+  fi
+  if [ -f "$outFile" ]; then
+    COUNT=$((COUNT+1))
+    echo "  -> $outFile"
+  else
+    echo "  !! Could not convert. Install LibreOffice or open/save as PDF manually."
+  fi
+done < <(find "$ROOT" -type f \( -iname "*.doc" -o -iname "*.docx" -o -iname "*.rtf" \) -print0)
+
+echo ""
+echo "Converted $COUNT file(s)."
+echo "Next step: create a ZIP that includes the converted PDFs, then rerun the Tab Curriculum ZIP Sorter."
+echo "Press return to close."
+read
+`; }
+function libreOfficeInstallScript(){ return `#!/bin/bash
+set -e
+echo "This installs LibreOffice using Homebrew so the curriculum converter can run automatically."
+echo ""
+if ! command -v brew >/dev/null 2>&1; then
+  echo "Homebrew is not installed on this Mac."
+  echo "Install LibreOffice manually from libreoffice.org, or use PDFelement manually."
+  echo "Press return to close."
+  read
+  exit 1
+fi
+brew install --cask libreoffice
+echo ""
+echo "LibreOffice install attempted. Now rerun 00 - AUTO CONVERT WORD DOCS TO PDF.command"
+echo "Press return to close."
+read
+`; }
+
+
 async function scanZip(){
   if(!selectedFile) throw new Error('Choose a ZIP file first.');
   sortedBlob=null; $('downloadBtn').disabled=true; setStatus('Reading ZIP...');
@@ -251,7 +360,7 @@ async function scanZip(){
     if(aud && lesson && (type==='teacher'||type==='learner'||type==='extra')){ const b=bucket(aud,lesson); b[type].push({name:path,bytes,type}); counts.pdfUsed++; if(type==='extra') counts.extras++; if(detailed) report.push(`${path} --> ${aud.label} / ${lesson.label} / ${type}`); }
     else { counts.unknown++; unknown.push(path); out.file(`${root}/04 - DO NOT UPLOAD - Archive and Extras/Unknown - Review/${sanitize(path.replaceAll('/',' - '))}`, bytes); if(detailed) report.push(`${path} --> UNKNOWN REVIEW`); }
   }
-  const manifest={version:'10.3',quarter_id:quarterId,display_title:displayTitle,event_tag:eventTag,lesson_map_source:mapResult.source,overview:{found:!!overview,source_path:overview?overview.path:null},items:[]};
+  const manifest={version:'10.4',quarter_id:quarterId,display_title:displayTitle,event_tag:eventTag,lesson_map_source:mapResult.source,overview:{found:!!overview,source_path:overview?overview.path:null},items:[]};
   const planningRoot=`${root}/01 - UPLOAD TO PLANNING CENTER`; const tabRoot=`${root}/02 - UPLOAD TO TABREADY/TABREADY_IMPORT`; const bundleRoot=`${root}/03 - OPTIONAL MONTHLY BUNDLES`; const monthly={};
   const sorted=Object.values(buckets).sort((a,b)=>a.aud.key.localeCompare(b.aud.key)||a.lesson.index-b.lesson.index);
   for(const b of sorted){ const aud=b.aud,l=b.lesson,cover=($('insertCover').checked&&overviewBytes)?overviewBytes:null; const teacherItems=[...b.teacher,...b.extra]; const learnerItems=[...b.learner];
@@ -265,14 +374,74 @@ async function scanZip(){
   counts.manifest=manifest.items.length; if($('makeTabReady').checked) out.file(`${tabRoot}/manifest.json`, JSON.stringify(manifest,null,2));
   addText(out,`${root}/00 - START HERE - Quarter Overview/01 - Leadership Summary.txt`,buildSummary(displayTitle,lessons,overview,mapResult.source));
   addText(out,`${root}/00 - START HERE - Quarter Overview/02 - Upload Instructions.txt`,buildInstructions(displayTitle));
-  const missing=buildMissingReport(lessons,buckets,counts); addText(out,`${root}/_SORTING REPORT.txt`,buildReport(selectedFile.name,counts,lessons,overview,manifest,report,detailed,mapResult.source,missing));
-  sortedBlob=await out.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}}); sortedName=`${slug(displayTitle)||'tab-curriculum'}-v10-3-output.zip`; $('downloadBtn').disabled=false; renderCounts(counts); $('report').textContent=buildReport(selectedFile.name,counts,lessons,overview,manifest,report,detailed,mapResult.source,missing); setStatus('Scan complete. Download the sorted package.');
+  const missing=buildMissingReport(lessons,buckets,counts);
+  if(counts.conversion>0){
+    addText(out,`${root}/00 - START HERE - Quarter Overview/03 - WORD DOC CONVERSION REQUIRED.txt`, conversionInstructions());
+    addText(out,`${root}/06 - NEEDS PDF CONVERSION BEFORE FINAL UPLOAD/00 - READ ME - Convert These Word Docs With PDFelement.txt`, conversionInstructions());
+  }
+  addText(out,`${root}/_SORTING REPORT.txt`,buildReport(selectedFile.name,counts,lessons,overview,manifest,report,detailed,mapResult.source,missing));
+  sortedBlob=await out.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}}); sortedName=`${slug(displayTitle)||'tab-curriculum'}-v10-5-output.zip`; $('downloadBtn').disabled=false; renderCounts(counts); $('report').textContent=buildReport(selectedFile.name,counts,lessons,overview,manifest,report,detailed,mapResult.source,missing); setStatus('Scan complete. Download the sorted package.');
 }
 function addManifest(out,manifest,tabRoot,quarterId,eventTag,aud,l,role,fn,bytes){ if(!$('makeTabReady').checked) return; const r2Key=`curriculum/${quarterId}/${aud.key}/${fn}`; out.file(`${tabRoot}/${r2Key}`, bytes); manifest.items.push({quarter_id:quarterId,event_tag:eventTag,audience:aud.key,audience_label:aud.label,session_index:l.index,unit_number:l.unitNumber,session_number:l.sessionNumber,date:l.date,display_date:`${l.month} ${l.day}`,title:l.title,focal_passage:l.focal,file_role:role,filename:fn,file_path:r2Key,r2_key:r2Key,role_tags:aud.roleTags,language:aud.language,content_title:`${l.label} - ${aud.label} - ${role==='teacher'?'Teacher Packet':'Learner Guide'}`}); }
 function buildSummary(title,lessons,overview,mapSource){ let txt=`${title}\n\nMaster map source: ${mapSource}\n`; if(overview) txt+=`Schedule file detected:\n${overview.path}\n`; txt+='\nQuarter sequence:\n'; for(const l of lessons) txt+=`${String(l.index).padStart(2,'0')} - ${l.month} ${l.day} - ${l.title}${l.focal?' — '+l.focal:''}\n`; return txt; }
 function buildInstructions(title){ return `START HERE — ${title}\n\n1. Upload Planning Center files from:\n   01 - UPLOAD TO PLANNING CENTER\n\n2. Upload/import TabReady files from:\n   02 - UPLOAD TO TABREADY / TABREADY_IMPORT\n\n3. Optional monthly bundles are in:\n   03 - OPTIONAL MONTHLY BUNDLES\n\n4. Do NOT upload these unless intentionally needed:\n   04 - DO NOT UPLOAD - Archive and Extras\n   05 - DO NOT USE AT TAB\n\n5. Generated files use Learner Guide language and sortable lesson/date prefixes.\n`; }
 function buildMissingReport(lessons,buckets,counts){ const lines=[]; for(const aud of AUDIENCES){ let hasAny=false; for(const l of lessons){ const b=buckets[`${aud.key}|${l.index}`]; if(b){ hasAny=true; if(!b.teacher.length) lines.push(`${aud.label} ${l.label}: missing teacher PDF source files`); if(!b.learner.length && b.teacher.length) lines.push(`${aud.label} ${l.label}: no Learner Guide PDF source found; Learner Guide was copied from Teacher Packet for access`); } } if(!hasAny) lines.push(`${aud.label}: no packet-ready PDF source files found. Check NEEDS PDF CONVERSION folder if source files are Word docs.`); } if(counts && counts.conversion) lines.push(`${counts.conversion} Word/RTF curriculum files were found and moved to 06 - NEEDS PDF CONVERSION BEFORE FINAL UPLOAD.`); return lines; }
-function buildReport(zipName,c,lessons,overview,manifest,details,detailed,mapSource,missing){ let txt=`TAB CURRICULUM ZIP SORTER — V10.3 REPORT\nOriginal ZIP: ${zipName}\n\nSUMMARY:\nTotal files scanned: ${c.total}\nOverview file found: ${overview?'YES':'NO'}\nLesson map source: ${mapSource}\nLesson map entries: ${lessons.length}\nTeacher Packet PDFs created: ${c.teacherPackets}\nLearner Guide PDFs created: ${c.learnerGuides}\nMonthly bundle PDFs created: ${c.bundles}\nPDF files used in packets: ${c.pdfUsed}\nUnknown review files: ${c.unknown}\nExcluded / not used at Tab: ${c.excluded}\nSkipped junk/non-selected files: ${c.junk}\nUseful non-PDF preserved: ${c.nonPdf}\nNeeds PDF conversion files: ${c.conversion||0}\nFallback Learner Guides copied from Teacher Packet: ${c.fallbackLearner||0}\nTabReady manifest items: ${c.manifest}\n\n`; if(overview) txt+=`MASTER SCHEDULE FILE:\n${overview.path}\n\n`; if(overview && !isPdf(overview.path)) txt+=`COVER WARNING:\nThe master schedule was found as a Word/doc file. It was used for the lesson map, but it cannot be inserted into generated PDFs until converted to PDF and included in the ZIP.\n\n`; else txt+='WARNING: No Leader Pack Schedule / Schedule of Studies file was detected.\n\n'; txt+='LESSON MAP USED:\n'+lessons.map(l=>`${String(l.index).padStart(2,'0')} - ${l.date} - ${l.title} (${l.unit}, Unit ${l.unitNumber}, Session ${l.sessionNumber})`).join('\n')+'\n\n'; txt+='MISSING / REVIEW NOTES:\n'+(missing.length?missing.join('\n'):'No lane warnings generated.')+'\n\n'; txt+='TABREADY CHECK:\nEvery manifest item uses file_path === r2_key.\n\n'; if(detailed&&details.length) txt+='DETAILED FILE MOVES:\n'+details.join('\n')+'\n'; return txt; }
+function buildReport(zipName,c,lessons,overview,manifest,details,detailed,mapSource,missing){
+  let txt=`TAB CURRICULUM ZIP SORTER — V10.6 REPORT
+Original ZIP: ${zipName}
+
+SUMMARY:
+Total files scanned: ${c.total}
+Overview file found: ${overview?'YES':'NO'}
+Lesson map source: ${mapSource}
+Lesson map entries: ${lessons.length}
+Teacher Packet PDFs created: ${c.teacherPackets}
+Learner Guide PDFs created: ${c.learnerGuides}
+Monthly bundle PDFs created: ${c.bundles}
+PDF files used in packets: ${c.pdfUsed}
+Unknown review files: ${c.unknown}
+Excluded / not used at Tab: ${c.excluded}
+Skipped junk/non-selected files: ${c.junk}
+Useful non-PDF preserved: ${c.nonPdf}
+Needs PDF conversion files: ${c.conversion||0}
+Fallback Learner Guides copied from Teacher Packet: ${c.fallbackLearner||0}
+TabReady manifest items: ${c.manifest}
+
+`;
+  if(overview){
+    txt+=`MASTER SCHEDULE FILE:
+${overview.path}
+
+`;
+    if(!isPdf(overview.path)) txt+=`COVER WARNING:
+The master schedule was found as a Word/doc file. It was used for the lesson map, but it cannot be inserted into generated PDFs until converted to PDF and included in the ZIP.
+
+`;
+  } else {
+    txt+='WARNING: No Leader Pack Schedule / Schedule of Studies file was detected.
+
+';
+  }
+  txt+='LESSON MAP USED:
+'+lessons.map(l=>`${String(l.index).padStart(2,'0')} - ${l.date} - ${l.title} (${l.unit}, Unit ${l.unitNumber}, Session ${l.sessionNumber})`).join('
+')+'
+
+';
+  txt+='MISSING / REVIEW NOTES:
+'+(missing.length?missing.join('
+'):'No lane warnings generated.')+'
+
+';
+  txt+='TABREADY CHECK:
+Every manifest item uses file_path === r2_key.
+
+';
+  if(detailed&&details.length) txt+='DETAILED FILE MOVES:
+'+details.join('
+')+'
+';
+  return txt;
+}
 function renderCounts(c){ $('sTotal').textContent=c.total||0; $('sOverview').textContent=c.overview||0; $('sMap').textContent=c.map||0; $('sTeacher').textContent=c.teacherPackets||0; $('sLearner').textContent=c.learnerGuides||0; $('sBundles').textContent=c.bundles||0; $('sUnknown').textContent=c.unknown||0; $('sManifest').textContent=c.manifest||0; }
 function setStatus(s){ $('status').textContent=s; }
 function reset(){ selectedFile=null; sortedBlob=null; $('fileInput').value=''; $('downloadBtn').disabled=true; renderCounts({}); $('report').textContent='No ZIP scanned yet.'; setStatus('No ZIP selected.'); }
